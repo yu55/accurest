@@ -7,6 +7,7 @@ import spock.lang.Specification
 
 class JsonConverterSpec extends Specification {
 
+	//TODO: Should not verify via concrete element in the list (LENIENT verification should be on)
 	def 'should convert a json with list as root to a map of path to value'() {
 		given:
 		String json = '''
