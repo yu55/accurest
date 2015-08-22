@@ -36,17 +36,20 @@ class JsonConverterSpec extends Specification {
 '''
 		when:
 			Map<String, Object> pathAndValues = JsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
-
 		then:
-			Object parsedJson = Configuration.defaultConfiguration().jsonProvider().parse(json);
-			pathAndValues.entrySet().each {
-				assert JsonPath.read(parsedJson, it.key) == it.value
-			}
+			pathAndValues['$[0].some.nested.json'] == 'with value'
+			pathAndValues['$[0].some.nested.anothervalue'] == 4
+			pathAndValues['$[0].some.nested.withlist[0]'] == 'a'
+			pathAndValues['$[0].some.nested.withlist[1]'] == 'b'
+			pathAndValues['$[0].some.nested.withlist[2]'] == 'c'
+		and:
+			assertThatJsonPathsInMapAreValid(json, pathAndValues)
+
 		}
 
 	def 'should convert a json with a map as tooy to a map of path to value'() {
 		given:
-		String json = '''
+			String json = '''
 					 {
 						"some" : {
 							"nested" : {
@@ -61,11 +64,21 @@ class JsonConverterSpec extends Specification {
 '''
 		when:
 			Map<String, Object> pathAndValues = JsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
-
 		then:
-			Object parsedJson = Configuration.defaultConfiguration().jsonProvider().parse(json);
-			pathAndValues.entrySet().each {
-				assert JsonPath.read(parsedJson, it.key) == it.value
-			}
+			pathAndValues['$.some.nested.json'] == 'with value'
+			pathAndValues['$.some.nested.anothervalue'] == 4
+			pathAndValues['$.some.nested.withlist[0]'] == 'a'
+			pathAndValues['$.some.nested.withlist[1]'] == 'b'
+			pathAndValues['$.some.nested.withlist[2]'] == 'c'
+		and:
+			assertThatJsonPathsInMapAreValid(json, pathAndValues)
+
 		}
+
+	private void assertThatJsonPathsInMapAreValid(String json, Map<String, Object> pathAndValues) {
+		Object parsedJson = Configuration.defaultConfiguration().jsonProvider().parse(json);
+		pathAndValues.entrySet().each {
+			assert JsonPath.read(parsedJson, it.key) == it.value
+		}
+	}
 }
