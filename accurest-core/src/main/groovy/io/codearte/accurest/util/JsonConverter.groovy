@@ -47,7 +47,10 @@ class JsonConverter {
 		} else if (value instanceof Map) {
 			return convertWithKey(key, value as Map, closure)
 		} else if (value instanceof List) {
-			return value.collect({ traverseRecursively(key, it, closure) })
+			value.eachWithIndex { def element, int index ->
+				traverseRecursively("$key[$index]", element, closure)
+			}
+			return value
 		}
 		try {
 			return closure(key, value)
@@ -63,9 +66,14 @@ class JsonConverter {
 		}
 	}
 
-	static Map<String, Object> transformToPathAndValues(def json) {
+	static Map<String, Object> transformToJsonPathWithValues(def json) {
 		Map<String, Object> pathsAndValues = [:]
-		traverseRecursively('$', json) { String key, Object value ->
+		traverseRecursivelyForKey(json, '$', pathsAndValues)
+		return pathsAndValues
+	}
+
+	private static void traverseRecursivelyForKey(def json, String rootKey, Map<String, Object> pathsAndValues) {
+		traverseRecursively(rootKey, json) { String key, Object value ->
 			Object valueToInsert = value
 			if (pathsAndValues.containsKey(key)) {
 				Object oldValue = pathsAndValues[key]
@@ -73,6 +81,5 @@ class JsonConverter {
 			}
 			pathsAndValues[key] = valueToInsert
 		}
-		return pathsAndValues
 	}
 }
