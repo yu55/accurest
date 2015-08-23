@@ -5,6 +5,9 @@ import groovy.json.JsonSlurper
  */
 class JsonConverter {
 
+
+	public static final boolean WITH_A_LIST = true
+
 	private static Map convert(Map map, Closure closure) {
 		return map.collectEntries {
 			key, value ->
@@ -34,35 +37,51 @@ class JsonConverter {
 		}
 	}
 
-	static def traverseRecursively(String key, def value, Closure closure) {
+	static def traverseRecursively(Class parentType, String key, def value, Closure closure) {
 		if (value instanceof String && value) {
 			try {
 				def json = new JsonSlurper().parseText(value)
 				if (json instanceof Map) {
-					return convertWithKey(key, json, closure)
+					return convertWithKey(parentType, key, json, closure)
 				}
 			} catch (Exception ignore) {
-				return closure(key, value)
+				return closure(parentType == List, key, value)
 			}
+		} else if (isAnEntryWithNonCollectionLikeValue(value)) {
+			return convertWithKey(List, key, value as Map, closure)
 		} else if (value instanceof Map) {
-			return convertWithKey(key, value as Map, closure)
+			return convertWithKey(Map, key, value as Map, closure)
 		} else if (value instanceof List) {
-			value.eachWithIndex { def element, int index ->
-				traverseRecursively("$key[$index]", element, closure)
+			value.each { def element ->
+				traverseRecursively(List, "$key[*]", element, closure)
 			}
 			return value
 		}
 		try {
-			return closure(key, value)
+			return closure(parentType == List, key, value)
 		} catch (Exception ignore) {
 			return value
 		}
 	}
 
-	private static Map convertWithKey(String parentKey, Map map, Closure closure) {
+	private static boolean isAnEntryWithNonCollectionLikeValue(def value) {
+		if (!(value instanceof Map)) {
+			return false
+		}
+		Map valueAsMap = ((Map) value)
+		boolean mapHasOneEntry = valueAsMap.size() == 1
+		if (!mapHasOneEntry) {
+			return false
+		}
+		Object valueOfEntry = valueAsMap.entrySet().first().value
+		return !(valueOfEntry instanceof Map || valueOfEntry instanceof List)
+
+	}
+
+	private static Map convertWithKey(Class parentType, String parentKey, Map map, Closure closureToExecute) {
 		return map.collectEntries {
 			String entrykey, value ->
-				[entrykey, traverseRecursively("${parentKey}.${entrykey}", value, closure)]
+				[entrykey, traverseRecursively(parentType, "${parentKey}.${entrykey}", value, closureToExecute)]
 		}
 	}
 
@@ -73,13 +92,25 @@ class JsonConverter {
 	}
 
 	private static void traverseRecursivelyForKey(def json, String rootKey, Map<String, Object> pathsAndValues) {
-		traverseRecursively(rootKey, json) { String key, Object value ->
+		traverseRecursively(Map, rootKey, json) { boolean applyFiltering = false, String key, Object value ->
+			String keyToInsert = getValueToInsert(applyFiltering, key, value)
 			Object valueToInsert = value
-			if (pathsAndValues.containsKey(key)) {
-				Object oldValue = pathsAndValues[key]
+			if (pathsAndValues.containsKey(keyToInsert)) {
+				Object oldValue = pathsAndValues[keyToInsert]
 				valueToInsert = [oldValue, valueToInsert].flatten()
 			}
-			pathsAndValues[key] = valueToInsert
+			pathsAndValues[keyToInsert] = valueToInsert
 		}
+	}
+
+	private static Object getValueToInsert(boolean withAList, String key, Object value) {
+		return withAList ? convertToListElementFiltering(key, value) : key
+	}
+
+	static String convertToListElementFiltering(String key, Object value) {
+		int lastDot = key.lastIndexOf('.')
+		String keyWithoutLastElement = key.substring(0, lastDot)
+		String lastElement = key.substring(lastDot + 1)
+		return """$keyWithoutLastElement[?(@.$lastElement == '$value')]""".toString()
 	}
 }

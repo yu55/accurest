@@ -1,50 +1,81 @@
 package io.codearte.accurest.util
 
 import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.Option
 import groovy.json.JsonSlurper
+import net.minidev.json.JSONArray
 import spock.lang.Specification
 
 class JsonConverterSpec extends Specification {
 
-	//TODO: Should not verify via concrete element in the list (LENIENT verification should be on)
 	def 'should convert a json with list as root to a map of path to value'() {
-		given:
-		String json = '''
-					[ {
-							"some" : {
-								"nested" : {
-									"json" : "with value",
-									"anothervalue": 4,
-									"withlist" : [
-										"a" , "b", "c"
-									]
-								}
-							}
-						},
-						{
-							"someother" : {
-								"nested" : {
-									"json" : "with value",
-									"anothervalue": 4,
-									"withlist" : [
-										"a" , "b", "c"
-									]
-								}
-							}
-						}
-					]
-'''
 		when:
 			Map<String, Object> pathAndValues = JsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['$[0].some.nested.json'] == 'with value'
-			pathAndValues['$[0].some.nested.anothervalue'] == 4
-			pathAndValues['$[0].some.nested.withlist[0]'] == 'a'
-			pathAndValues['$[0].some.nested.withlist[1]'] == 'b'
-			pathAndValues['$[0].some.nested.withlist[2]'] == 'c'
+			pathAndValues['$[*].some.nested.json'] == 'with value'
+			pathAndValues['$[*].some.nested.anothervalue'] == 4
+			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
+			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
+			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name == 'name3')]'''] == 'name3'
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
+		where:
+			json << [
+					'''
+						[ {
+								"some" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}, {"anothernested": { "name": "name3"} }
+										]
+									}
+								}
+							},
+							{
+								"someother" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}
+										]
+									}
+								}
+							}
+						]
+	''',
+					'''
+							[{
+								"someother" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}
+										]
+									}
+								}
+							},
+						 {
+								"some" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											 {"name": "name2"}, {"anothernested": { "name": "name3"} }, { "name" :"name1"}
+										]
+									}
+								}
+							}
+						]
+	'''
+
+
+			]
 
 		}
 
@@ -52,34 +83,39 @@ class JsonConverterSpec extends Specification {
 		given:
 			String json = '''
 					 {
-						"some" : {
-							"nested" : {
-								"json" : "with value",
-								"anothervalue": 4,
-								"withlist" : [
-									"a" , "b", "c"
-								]
+							"some" : {
+								"nested" : {
+									"json" : "with value",
+									"anothervalue": 4,
+									"withlist" : [
+										{ "name" :"name1"} , {"name": "name2"}
+									]
+								}
 							}
 						}
-					}
 '''
 		when:
 			Map<String, Object> pathAndValues = JsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$.some.nested.json'] == 'with value'
 			pathAndValues['$.some.nested.anothervalue'] == 4
-			pathAndValues['$.some.nested.withlist[0]'] == 'a'
-			pathAndValues['$.some.nested.withlist[1]'] == 'b'
-			pathAndValues['$.some.nested.withlist[2]'] == 'c'
+			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
+			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 
 		}
 
 	private void assertThatJsonPathsInMapAreValid(String json, Map<String, Object> pathAndValues) {
-		Object parsedJson = Configuration.defaultConfiguration().jsonProvider().parse(json);
+		DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.AS_PATH_LIST).build()).parse(json);
 		pathAndValues.entrySet().each {
-			assert JsonPath.read(parsedJson, it.key) == it.value
+			assert !(parsedJson.read(it.key, JSONArray).empty)
 		}
+	}
+
+	JSONArray valueAsJsonArray(Object value) {
+		JSONArray jsonArray = new JSONArray()
+		jsonArray.add(value)
+		return jsonArray
 	}
 }
