@@ -8,11 +8,11 @@ import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray
 import spock.lang.Specification
 
-class JsonConverterSpec extends Specification {
+class JsonPathJsonConverterSpec extends Specification {
 
 	def 'should convert a json with list as root to a map of path to value'() {
 		when:
-			Map<String, Object> pathAndValues = JsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4
@@ -95,7 +95,7 @@ class JsonConverterSpec extends Specification {
 						}
 '''
 		when:
-			Map<String, Object> pathAndValues = JsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$.some.nested.json'] == 'with value'
 			pathAndValues['$.some.nested.anothervalue'] == 4
@@ -110,10 +110,19 @@ class JsonConverterSpec extends Specification {
 		DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.AS_PATH_LIST).build()).parse(json);
 		pathAndValues.entrySet().each {
 			assert !(parsedJson.read(it.key, JSONArray).empty)
+			assert valueToRetrieve(fromJsonPath(it, json, parsedJson)) == it.value
 		}
 	}
 
-	JSONArray valueAsJsonArray(Object value) {
+	protected Object valueToRetrieve(def value) {
+		return value instanceof Map ? ((Map) value).entrySet().first().value : value
+	}
+
+	protected Object fromJsonPath(Map.Entry entry, String json, DocumentContext parsedJson) {
+		return JsonPath.parse(json).read((parsedJson.read(entry.key) as JSONArray).get(0), Object)
+	}
+
+	protected JSONArray valueAsJsonArray(Object value) {
 		JSONArray jsonArray = new JSONArray()
 		jsonArray.add(value)
 		return jsonArray
