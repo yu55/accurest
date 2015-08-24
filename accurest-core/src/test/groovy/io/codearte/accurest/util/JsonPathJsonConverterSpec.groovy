@@ -104,6 +104,22 @@ class JsonPathJsonConverterSpec extends Specification {
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		}
 
+	def 'should convert a json with a list'() {
+		given:
+			String json = '''
+					 {
+							"items" : ["HOP"]
+					}
+'''
+		when:
+			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+		then:
+			pathAndValues['''$.items[?(@ == 'HOP')]'''] == 'HOP'
+		and:
+			assertThatJsonPathsInMapAreValid(json, pathAndValues)
+		}
+
+
 	def 'should convert a map json with a regex pattern'() {
 		given:
 			List json = [
@@ -167,9 +183,4 @@ class JsonPathJsonConverterSpec extends Specification {
 		return JsonPath.parse(json).read((parsedJson.read(entry.key) as JSONArray).get(0), Object)
 	}
 
-	protected JSONArray valueAsJsonArray(Object value) {
-		JSONArray jsonArray = new JSONArray()
-		jsonArray.add(value)
-		return jsonArray
-	}
 }

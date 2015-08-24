@@ -3,21 +3,13 @@ import groovy.json.JsonOutput
 import groovy.transform.PackageScope
 import groovy.transform.TypeChecked
 import io.codearte.accurest.dsl.GroovyDsl
-import io.codearte.accurest.dsl.internal.DslProperty
-import io.codearte.accurest.dsl.internal.ExecutionProperty
-import io.codearte.accurest.dsl.internal.MatchingStrategy
-import io.codearte.accurest.dsl.internal.QueryParameter
-import io.codearte.accurest.dsl.internal.Request
-import io.codearte.accurest.dsl.internal.Response
+import io.codearte.accurest.dsl.internal.*
 import io.codearte.accurest.util.ContentType
 import io.codearte.accurest.util.JsonConverter
 
 import java.util.regex.Pattern
 
-import static io.codearte.accurest.util.ContentUtils.extractValue
-import static io.codearte.accurest.util.ContentUtils.recognizeContentTypeFromContent
-import static io.codearte.accurest.util.ContentUtils.recognizeContentTypeFromHeader
-
+import static io.codearte.accurest.util.ContentUtils.*
 /**
  * @author Jakub Kubrynski
  */

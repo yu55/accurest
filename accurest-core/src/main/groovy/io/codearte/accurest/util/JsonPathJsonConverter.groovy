@@ -11,6 +11,7 @@ class JsonPathJsonConverter {
 
 
 	public static final String ROOT_JSON_PATH_ELEMENT = '$'
+	public static final String ALL_ELEMENTS = "[*]"
 
 	static def traverseRecursively(Class parentType, String key, def value, Closure closure) {
 		if (value instanceof String && value) {
@@ -78,14 +79,23 @@ class JsonPathJsonConverter {
 		}
 	}
 
-	private static Object getValueToInsert(boolean withAList, String key, Object value) {
-		return withAList ? convertToListElementFiltering(key, value) : key
+	private static Object getValueToInsert(boolean applyFiltering, String key, Object value) {
+		return applyFiltering ? convertToListElementFiltering(key, value) : key
 	}
 
 	protected static String convertToListElementFiltering(String key, Object value) {
+		if (key.endsWith(ALL_ELEMENTS)) {
+			int lastAllElements = key.lastIndexOf(ALL_ELEMENTS)
+			String keyWithoutAllElements = key.substring(0, lastAllElements)
+			return """$keyWithoutAllElements[?(@ ${compareWith(value)})]""".toString()
+		}
+		return getKeyForTraversalOfListWithNonPrimitiveTypes(key, value)
+	}
+
+	private static String getKeyForTraversalOfListWithNonPrimitiveTypes(String key, value) {
 		int lastDot = key.lastIndexOf('.')
 		String keyWithoutLastElement = key.substring(0, lastDot)
-		String lastElement = key.substring(lastDot + 1)
+		String lastElement = key.substring(lastDot + 1).replaceAll(~/\[\*\]/, "")
 		return """$keyWithoutLastElement[?(@.$lastElement ${compareWith(value)})]""".toString()
 	}
 
@@ -95,4 +105,5 @@ class JsonPathJsonConverter {
 		}
 		return """== '$value'"""
 	}
+
 }
