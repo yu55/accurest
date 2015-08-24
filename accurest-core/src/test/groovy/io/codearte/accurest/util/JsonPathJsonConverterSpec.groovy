@@ -1,15 +1,19 @@
 package io.codearte.accurest.util
-
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray
 import spock.lang.Specification
+import spock.lang.Unroll
+
+import java.util.regex.Pattern
 
 class JsonPathJsonConverterSpec extends Specification {
 
+	@Unroll
 	def 'should convert a json with list as root to a map of path to value'() {
 		when:
 			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
@@ -48,7 +52,7 @@ class JsonPathJsonConverterSpec extends Specification {
 							}
 						]
 	''',
-					'''
+		'''
 							[{
 								"someother" : {
 									"nested" : {
@@ -71,12 +75,7 @@ class JsonPathJsonConverterSpec extends Specification {
 									}
 								}
 							}
-						]
-	'''
-
-
-			]
-
+						]''']
 		}
 
 	def 'should convert a json with a map as tooy to a map of path to value'() {
@@ -103,7 +102,53 @@ class JsonPathJsonConverterSpec extends Specification {
 			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
+		}
 
+	def 'should convert a map json with a regex pattern'() {
+		given:
+			List json = [
+					[some:
+							 [nested: [
+									 json: "with value",
+									 anothervalue: 4,
+									 withlist:
+											 [
+													 [name: "name2"],
+													 [name: "name1"],
+													 [anothernested:
+															  [name: Pattern.compile('[a-zA-Z]+')]
+													 ],
+													 [age: "123456789"]
+											 ]
+							 ]
+							 ]
+					],
+					[someother:
+							 [nested: [
+									 json: "with value",
+									 anothervalue: 4,
+									 withlist:
+											 [
+													 [name: "name2"],
+													 [name: "name1"]
+											 ]
+							 ]
+							 ]
+					]
+			]
+		when:
+			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(json)
+		then:
+			pathAndValues['$[*].some.nested.json'] == 'with value'
+			pathAndValues['$[*].some.nested.anothervalue'] == 4
+			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
+			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
+			(pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] as Pattern).pattern() == '[a-zA-Z]+'
+		when:
+			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] = "Kowalski"
+			json.some.nested.withlist[0][2].anothernested.name = "Kowalski"
+		then:
+			assertThatJsonPathsInMapAreValid(JsonOutput.prettyPrint(JsonOutput.toJson(json)), pathAndValues)
 		}
 
 	private void assertThatJsonPathsInMapAreValid(String json, Map<String, Object> pathAndValues) {

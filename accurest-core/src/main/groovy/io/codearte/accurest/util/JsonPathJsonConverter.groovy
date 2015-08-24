@@ -2,6 +2,8 @@ package io.codearte.accurest.util
 
 import groovy.json.JsonSlurper
 
+import java.util.regex.Pattern
+
 /**
  * @author Marcin Grzejszczak
  */
@@ -80,10 +82,17 @@ class JsonPathJsonConverter {
 		return withAList ? convertToListElementFiltering(key, value) : key
 	}
 
-	static String convertToListElementFiltering(String key, Object value) {
+	protected static String convertToListElementFiltering(String key, Object value) {
 		int lastDot = key.lastIndexOf('.')
 		String keyWithoutLastElement = key.substring(0, lastDot)
 		String lastElement = key.substring(lastDot + 1)
-		return """$keyWithoutLastElement[?(@.$lastElement == '$value')]""".toString()
+		return """$keyWithoutLastElement[?(@.$lastElement ${compareWith(value)})]""".toString()
+	}
+
+	protected static String compareWith(Object value) {
+		if (value instanceof Pattern) {
+			return """=~ /${(value as Pattern).pattern()}/"""
+		}
+		return """== '$value'"""
 	}
 }
