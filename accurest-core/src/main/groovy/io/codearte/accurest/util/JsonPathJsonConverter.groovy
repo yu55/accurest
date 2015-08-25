@@ -61,42 +61,41 @@ class JsonPathJsonConverter {
 		}
 	}
 
-	static Map<String, Object> transformToJsonPathWithValues(def json) {
-		Map<String, Object> pathsAndValues = [:]
+	static JsonPaths transformToJsonPathWithValues(def json) {
+		JsonPaths pathsAndValues = [] as Set
 		traverseRecursivelyForKey(json, ROOT_JSON_PATH_ELEMENT, pathsAndValues)
 		return pathsAndValues
 	}
 
-	private static void traverseRecursivelyForKey(def json, String rootKey, Map<String, Object> pathsAndValues) {
+	private static void traverseRecursivelyForKey(def json, String rootKey, JsonPaths pathsAndValues) {
 		traverseRecursively(Map, rootKey, json) { boolean applyFiltering = false, String key, Object value ->
-			String keyToInsert = getValueToInsert(applyFiltering, key, value)
-			Object valueToInsert = value
-			if (pathsAndValues.containsKey(keyToInsert)) {
-				Object oldValue = pathsAndValues[keyToInsert]
-				valueToInsert = [oldValue, valueToInsert].flatten()
-			}
-			pathsAndValues[keyToInsert] = valueToInsert
+			JsonPathEntry entry = getValueToInsert(applyFiltering, key, value)
+			pathsAndValues.add(entry)
 		}
 	}
 
-	private static Object getValueToInsert(boolean applyFiltering, String key, Object value) {
-		return applyFiltering ? convertToListElementFiltering(key, value) : key
+	private static JsonPathEntry getValueToInsert(boolean applyFiltering, String key, Object value) {
+		return applyFiltering ? convertToListElementFiltering(key, value) : JsonPathEntry.simple(key, value)
 	}
 
-	protected static String convertToListElementFiltering(String key, Object value) {
+	protected static JsonPathEntry convertToListElementFiltering(String key, Object value) {
 		if (key.endsWith(ALL_ELEMENTS)) {
 			int lastAllElements = key.lastIndexOf(ALL_ELEMENTS)
 			String keyWithoutAllElements = key.substring(0, lastAllElements)
-			return """$keyWithoutAllElements[?(@ ${compareWith(value)})]""".toString()
+			return JsonPathEntry.simple("""$keyWithoutAllElements[?(@ ${compareWith(value)})]""".toString(), value)
 		}
 		return getKeyForTraversalOfListWithNonPrimitiveTypes(key, value)
 	}
 
-	private static String getKeyForTraversalOfListWithNonPrimitiveTypes(String key, value) {
+	private static JsonPathEntry getKeyForTraversalOfListWithNonPrimitiveTypes(String key, Object value) {
 		int lastDot = key.lastIndexOf('.')
 		String keyWithoutLastElement = key.substring(0, lastDot)
 		String lastElement = key.substring(lastDot + 1).replaceAll(~/\[\*\]/, "")
-		return """$keyWithoutLastElement[?(@.$lastElement ${compareWith(value)})]""".toString()
+		return new JsonPathEntry(
+				"""$keyWithoutLastElement[?(@.$lastElement ${compareWith(value)})]""".toString(),
+				lastElement,
+				value
+		)
 	}
 
 	protected static String compareWith(Object value) {

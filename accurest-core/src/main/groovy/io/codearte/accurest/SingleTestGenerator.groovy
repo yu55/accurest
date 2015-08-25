@@ -50,8 +50,14 @@ class SingleTestGenerator {
 		}
 
 		if (configProperties.ruleClassForTests) {
-			clazz.addImport('org.junit.Rule')
-					.addRule(configProperties.ruleClassForTests)
+
+			clazz.addImport(['org.junit.Rule',
+							 'com.jayway.jsonpath.Configuration',
+							 'com.jayway.jsonpath.DocumentContext',
+							 'com.jayway.jsonpath.JsonPath',
+							 'com.jayway.jsonpath.Option',
+							 'net.minidev.json.JSONArray'])
+			.addRule(configProperties.ruleClassForTests)
 		}
 
 		listOfFiles.each {

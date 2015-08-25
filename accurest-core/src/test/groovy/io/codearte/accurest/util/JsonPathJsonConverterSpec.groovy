@@ -2,7 +2,6 @@ package io.codearte.accurest.util
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
-import com.jayway.jsonpath.Option
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray
@@ -16,7 +15,7 @@ class JsonPathJsonConverterSpec extends Specification {
 	@Unroll
 	def 'should convert a json with list as root to a map of path to value'() {
 		when:
-			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4
@@ -78,7 +77,7 @@ class JsonPathJsonConverterSpec extends Specification {
 						]''']
 		}
 
-	def 'should convert a json with a map as tooy to a map of path to value'() {
+	def 'should convert a json with a map as root to a map of path to value'() {
 		given:
 			String json = '''
 					 {
@@ -94,7 +93,7 @@ class JsonPathJsonConverterSpec extends Specification {
 						}
 '''
 		when:
-			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$.some.nested.json'] == 'with value'
 			pathAndValues['$.some.nested.anothervalue'] == 4
@@ -112,7 +111,7 @@ class JsonPathJsonConverterSpec extends Specification {
 					}
 '''
 		when:
-			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['''$.items[?(@ == 'HOP')]'''] == 'HOP'
 		and:
@@ -153,7 +152,7 @@ class JsonPathJsonConverterSpec extends Specification {
 					]
 			]
 		when:
-			Map<String, Object> pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(json)
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(json)
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4
@@ -167,10 +166,10 @@ class JsonPathJsonConverterSpec extends Specification {
 			assertThatJsonPathsInMapAreValid(JsonOutput.prettyPrint(JsonOutput.toJson(json)), pathAndValues)
 		}
 
-	private void assertThatJsonPathsInMapAreValid(String json, Map<String, Object> pathAndValues) {
-		DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.AS_PATH_LIST).build()).parse(json);
-		pathAndValues.entrySet().each {
-			assert !(parsedJson.read(it.key, JSONArray).empty)
+	private void assertThatJsonPathsInMapAreValid(String json, JsonPaths pathAndValues) {
+		DocumentContext parsedJson = JsonPath.using(Configuration.builder().build()).parse(json);
+		pathAndValues.each {
+			assert !(parsedJson.read(it.jsonPath, JSONArray).empty)
 			assert valueToRetrieve(fromJsonPath(it, json, parsedJson)) == it.value
 		}
 	}
@@ -179,8 +178,8 @@ class JsonPathJsonConverterSpec extends Specification {
 		return value instanceof Map ? ((Map) value).entrySet().first().value : value
 	}
 
-	protected Object fromJsonPath(Map.Entry entry, String json, DocumentContext parsedJson) {
-		return JsonPath.parse(json).read((parsedJson.read(entry.key) as JSONArray).get(0), Object)
+	protected Object fromJsonPath(JsonPathEntry entry, String json, DocumentContext parsedJson) {
+		return JsonPath.parse(json).read((parsedJson.read(entry.jsonPath) as JSONArray).get(0), Object)
 	}
 
 }

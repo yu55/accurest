@@ -6,6 +6,8 @@ import io.codearte.accurest.dsl.GroovyDsl
 import io.codearte.accurest.dsl.internal.*
 import io.codearte.accurest.util.ContentType
 import io.codearte.accurest.util.JsonConverter
+import io.codearte.accurest.util.JsonPathJsonConverter
+import io.codearte.accurest.util.JsonPaths
 
 import java.util.regex.Pattern
 
@@ -86,15 +88,23 @@ abstract class SpockMethodBodyBuilder {
 		}
 		if (contentType == ContentType.JSON) {
 			bb.addLine("def responseBody = new JsonSlurper().parseText($responseAsString)")
+			appendJsonPath(bb)
+			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithValues(responseBody)
+			jsonPaths.each {
+
+			}
 			processBodyElement(bb, "", responseBody)
 		} else if (contentType == ContentType.XML) {
 			bb.addLine("def responseBody = new XmlSlurper().parseText($responseAsString)")
 			// TODO xml validation
 		}   else {
 			bb.addLine("def responseBody = ($responseAsString)")
+			appendJsonPath(bb)
 			processBodyElement(bb, "", responseBody)
 		}
 	}
+
+	protected String
 
 	protected String getBodyAsString() {
 		Object bodyValue = extractServerValueFromBody(request.body.serverValue)
@@ -140,6 +150,10 @@ abstract class SpockMethodBodyBuilder {
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, Object value) {
 		blockBuilder.addLine("responseBody$property == ${value}")
+	}
+
+	protected void appendJsonPath(BlockBuilder blockBuilder) {
+		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.AS_PATH_LIST).build()).parse(json)")
 	}
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, String value) {
