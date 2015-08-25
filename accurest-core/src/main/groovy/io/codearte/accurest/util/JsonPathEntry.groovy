@@ -25,7 +25,7 @@ class JsonPathEntry {
 	}
 
 	String potentialyWrappedWithQuotesValue() {
-		return value instanceof Number ? value : "'$value'"
+		return value instanceof Number ? value : "'''$value'''"
 	}
 
 	static JsonPathEntry simple(String jsonPath, Object value) {
