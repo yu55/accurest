@@ -1,11 +1,6 @@
 package io.codearte.accurest.util
 
 class JsonPaths extends HashSet<JsonPathEntry> {
-	boolean containsJsonPath(String jsonPath) {
-		return any {
-			it.jsonPath == jsonPath
-		}
-	}
 
 	Object getAt(String key) {
 		return find {

@@ -51,19 +51,23 @@ class SingleTestGenerator {
 
 		if (configProperties.ruleClassForTests) {
 
-			clazz.addImport(['org.junit.Rule',
-							 'com.jayway.jsonpath.Configuration',
-							 'com.jayway.jsonpath.DocumentContext',
-							 'com.jayway.jsonpath.JsonPath',
-							 'com.jayway.jsonpath.Option',
-							 'net.minidev.json.JSONArray'])
+			clazz.addImport('org.junit.Rule')
 			.addRule(configProperties.ruleClassForTests)
 		}
+
+		addJsonPathRelatedImports(clazz)
 
 		listOfFiles.each {
 			clazz.addMethod(createTestMethod(it, configProperties))
 		}
 		return clazz.build()
+	}
+
+	private ClassBuilder addJsonPathRelatedImports(ClassBuilder clazz) {
+		clazz.addImport(['com.jayway.jsonpath.Configuration',
+						 'com.jayway.jsonpath.DocumentContext',
+						 'com.jayway.jsonpath.JsonPath',
+						 'net.minidev.json.JSONArray'])
 	}
 
 }

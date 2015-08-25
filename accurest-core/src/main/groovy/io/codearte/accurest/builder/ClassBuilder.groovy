@@ -42,6 +42,7 @@ class ClassBuilder {
 		imports << importToAdd
 		return this
 	}
+
 	ClassBuilder addImport(List<String> importsToAdd) {
 		imports.addAll(importsToAdd)
 		return this

@@ -1,7 +1,9 @@
 package io.codearte.accurest.util
+
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.Option
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray
@@ -167,19 +169,9 @@ class JsonPathJsonConverterSpec extends Specification {
 		}
 
 	private void assertThatJsonPathsInMapAreValid(String json, JsonPaths pathAndValues) {
-		DocumentContext parsedJson = JsonPath.using(Configuration.builder().build()).parse(json);
+		DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST).build()).parse(json);
 		pathAndValues.each {
-			assert !(parsedJson.read(it.jsonPath, JSONArray).empty)
-			assert valueToRetrieve(fromJsonPath(it, json, parsedJson)) == it.value
+			assert parsedJson.read(it.jsonPath, JSONArray).getAt(it.optionalSuffix ?: 0) == it.optionalSuffix ? [it.value] : it.value
 		}
 	}
-
-	protected Object valueToRetrieve(def value) {
-		return value instanceof Map ? ((Map) value).entrySet().first().value : value
-	}
-
-	protected Object fromJsonPath(JsonPathEntry entry, String json, DocumentContext parsedJson) {
-		return JsonPath.parse(json).read((parsedJson.read(entry.jsonPath) as JSONArray).get(0), Object)
-	}
-
 }

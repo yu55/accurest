@@ -9,8 +9,6 @@ import io.codearte.accurest.util.JsonConverter
 import io.codearte.accurest.util.JsonPathJsonConverter
 import io.codearte.accurest.util.JsonPaths
 
-import java.util.regex.Pattern
-
 import static io.codearte.accurest.util.ContentUtils.*
 /**
  * @author Jakub Kubrynski
@@ -87,19 +85,17 @@ abstract class SpockMethodBodyBuilder {
 			responseBody = extractValue(responseBody, contentType, { DslProperty dslProperty -> dslProperty.serverValue })
 		}
 		if (contentType == ContentType.JSON) {
-			bb.addLine("def responseBody = new JsonSlurper().parseText($responseAsString)")
-			appendJsonPath(bb)
+			appendJsonPath(bb, responseAsString)
 			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithValues(responseBody)
 			jsonPaths.each {
-
+				bb.addLine(it.buildJsonPathComparison('parsedJson'))
 			}
 			processBodyElement(bb, "", responseBody)
 		} else if (contentType == ContentType.XML) {
 			bb.addLine("def responseBody = new XmlSlurper().parseText($responseAsString)")
 			// TODO xml validation
 		}   else {
-			bb.addLine("def responseBody = ($responseAsString)")
-			appendJsonPath(bb)
+			appendJsonPath(bb, responseAsString)
 			processBodyElement(bb, "", responseBody)
 		}
 	}
@@ -149,32 +145,15 @@ abstract class SpockMethodBodyBuilder {
 	}
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, Object value) {
-		blockBuilder.addLine("responseBody$property == ${value}")
+
 	}
 
-	protected void appendJsonPath(BlockBuilder blockBuilder) {
-		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST, Option.AS_PATH_LIST).build()).parse(json)")
-	}
-
-	protected void processBodyElement(BlockBuilder blockBuilder, String property, String value) {
-		if (value.startsWith('$')) {
-			value = value.substring(1).replaceAll('\\$value', "responseBody$property")
-			blockBuilder.addLine(value)
-		} else {
-			blockBuilder.addLine("responseBody$property == \"${value}\"")
-		}
-	}
-
-	protected void processBodyElement(BlockBuilder blockBuilder, String property, Pattern pattern) {
-		blockBuilder.addLine("responseBody$property ==~ java.util.regex.Pattern.compile('${pattern.pattern()}')")
-	}
-
-	protected void processBodyElement(BlockBuilder blockBuilder, String property, DslProperty dslProperty) {
-		processBodyElement(blockBuilder, property, dslProperty.serverValue)
+	protected void appendJsonPath(BlockBuilder blockBuilder, String json) {
+		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.parse($json)")
 	}
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, ExecutionProperty exec) {
-		blockBuilder.addLine("${exec.insertValue("responseBody$property")}")
+		blockBuilder.addLine("${exec.insertValue("parsedJson.read('\\\$$property')")}")
 	}
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, Map.Entry entry) {

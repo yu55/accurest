@@ -1,6 +1,7 @@
 package io.codearte.accurest.util
 
 import groovy.json.JsonSlurper
+import io.codearte.accurest.dsl.internal.ExecutionProperty
 
 import java.util.regex.Pattern
 
@@ -69,6 +70,9 @@ class JsonPathJsonConverter {
 
 	private static void traverseRecursivelyForKey(def json, String rootKey, JsonPaths pathsAndValues) {
 		traverseRecursively(Map, rootKey, json) { boolean applyFiltering = false, String key, Object value ->
+			if (value instanceof ExecutionProperty) {
+				return
+			}
 			JsonPathEntry entry = getValueToInsert(applyFiltering, key, value)
 			pathsAndValues.add(entry)
 		}
