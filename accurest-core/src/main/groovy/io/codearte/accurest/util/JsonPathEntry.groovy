@@ -15,16 +15,16 @@ class JsonPathEntry {
 	
 	String buildJsonPathComparison(String parsedJsonVariable) {
 		if(optionalSuffix) {
-			return "${parsedJsonVariable}.read('''${jsonPath}''').${optionalSuffix} ${operator()} ${potentialyWrappedWithQuotesValue()}"
+			return "!${parsedJsonVariable}.read('''${jsonPath}''').empty"
 		}
-		return "${parsedJsonVariable}.read('''${jsonPath}''') ${operator()} ${potentialyWrappedWithQuotesValue()}"
+		return "${parsedJsonVariable}.read('''${jsonPath}''') ${operator()} ${potentiallyWrappedWithQuotesValue()}"
 	}
 
 	String operator() {
 		return value instanceof Pattern ? "==~" : "=="
 	}
 
-	String potentialyWrappedWithQuotesValue() {
+	String potentiallyWrappedWithQuotesValue() {
 		return value instanceof Number ? value : "'''$value'''"
 	}
 

@@ -14,7 +14,13 @@ class JsonPathJsonConverter {
 	public static final String ROOT_JSON_PATH_ELEMENT = '$'
 	public static final String ALL_ELEMENTS = "[*]"
 
-	static def traverseRecursively(Class parentType, String key, def value, Closure closure) {
+	public static JsonPaths transformToJsonPathWithValues(def json) {
+		JsonPaths pathsAndValues = [] as Set
+		traverseRecursivelyForKey(json, ROOT_JSON_PATH_ELEMENT, pathsAndValues)
+		return pathsAndValues
+	}
+
+	protected static def traverseRecursively(Class parentType, String key, def value, Closure closure) {
 		if (value instanceof String && value) {
 			try {
 				def json = new JsonSlurper().parseText(value)
@@ -60,12 +66,6 @@ class JsonPathJsonConverter {
 			String entrykey, value ->
 				[entrykey, traverseRecursively(parentType, "${parentKey}.${entrykey}", value, closureToExecute)]
 		}
-	}
-
-	static JsonPaths transformToJsonPathWithValues(def json) {
-		JsonPaths pathsAndValues = [] as Set
-		traverseRecursivelyForKey(json, ROOT_JSON_PATH_ELEMENT, pathsAndValues)
-		return pathsAndValues
 	}
 
 	private static void traverseRecursivelyForKey(def json, String rootKey, JsonPaths pathsAndValues) {
