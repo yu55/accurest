@@ -15,9 +15,9 @@ class JsonPathEntry {
 	
 	String buildJsonPathComparison(String parsedJsonVariable) {
 		if(optionalSuffix) {
-			return "${parsedJsonVariable}.read('${jsonPath}').${optionalSuffix} ${operator()} ${potentialyWrappedWithQuotesValue()}"
-		} 
-		return "${parsedJsonVariable}.read('${jsonPath}') ${operator()} ${potentialyWrappedWithQuotesValue()}"
+			return "${parsedJsonVariable}.read('''${jsonPath}''').${optionalSuffix} ${operator()} ${potentialyWrappedWithQuotesValue()}"
+		}
+		return "${parsedJsonVariable}.read('''${jsonPath}''') ${operator()} ${potentialyWrappedWithQuotesValue()}"
 	}
 
 	String operator() {
