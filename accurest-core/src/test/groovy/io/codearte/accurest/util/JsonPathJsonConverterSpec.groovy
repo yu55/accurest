@@ -1,9 +1,9 @@
 package io.codearte.accurest.util
 
-import com.jayway.jsonpath.Configuration
-import com.jayway.jsonpath.DocumentContext
-import com.jayway.jsonpath.JsonPath
-import com.jayway.jsonpath.Option
+import jarjar.com.jayway.jsonpath.Configuration
+import jarjar.com.jayway.jsonpath.DocumentContext
+import jarjar.com.jayway.jsonpath.JsonPath
+import jarjar.com.jayway.jsonpath.Option
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray

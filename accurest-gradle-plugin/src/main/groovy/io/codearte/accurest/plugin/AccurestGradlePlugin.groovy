@@ -29,7 +29,6 @@ class AccurestGradlePlugin implements Plugin<Project> {
 		createGenerateTestsTask(extension)
 		createAndConfigureGenerateWireMockClientStubsFromDslTask(extension)
 		deprecatedCreateAndConfigureGenerateWiremockClientStubsFromDslTask()
-		project.dependencies.add("testCompile", "com.jayway.jsonpath:json-path:[2.0.0,)")
 
 		project.afterEvaluate {
 			def hasIdea = project.plugins.findPlugin(IDEA_PLUGIN_CLASS)
