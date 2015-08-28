@@ -86,7 +86,7 @@ abstract class SpockMethodBodyBuilder {
 		}
 		if (contentType == ContentType.JSON) {
 			appendJsonPath(bb, responseAsString)
-			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithValues(responseBody)
+			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithClientSideValues(responseBody)
 			jsonPaths.each {
 				bb.addLine(it.buildJsonPathComparison('parsedJson'))
 			}

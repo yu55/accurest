@@ -1,23 +1,47 @@
 package io.codearte.accurest.util
-
 import groovy.json.JsonSlurper
+import io.codearte.accurest.dsl.internal.DslProperty
 import io.codearte.accurest.dsl.internal.ExecutionProperty
 
 import java.util.regex.Pattern
-
 /**
  * @author Marcin Grzejszczak
  */
 class JsonPathJsonConverter {
 
+	private static final Boolean CLIENT_SIDE = true
+
 
 	public static final String ROOT_JSON_PATH_ELEMENT = '$'
 	public static final String ALL_ELEMENTS = "[*]"
 
-	public static JsonPaths transformToJsonPathWithValues(def json) {
+	public static JsonPaths transformToJsonPathWithClientSideValues(def json) {
+		return transformToJsonPathWithValues(json, CLIENT_SIDE)
+	}
+
+	public static JsonPaths transformToJsonPathWithValues(def json, boolean clientSide) {
 		JsonPaths pathsAndValues = [] as Set
-		traverseRecursivelyForKey(json, ROOT_JSON_PATH_ELEMENT, pathsAndValues)
+		Object convertedJson = getClientOrServerSideValues(json, clientSide)
+		traverseRecursivelyForKey(convertedJson, ROOT_JSON_PATH_ELEMENT, pathsAndValues) { boolean applyFiltering = false, String key, Object value ->
+			if (value instanceof ExecutionProperty) {
+				return
+			}
+			JsonPathEntry entry = getValueToInsert(applyFiltering, key, value)
+			pathsAndValues.add(entry)
+		}
 		return pathsAndValues
+	}
+
+	private static Object getClientOrServerSideValues(json, boolean clientSide) {
+		return JsonConverter.transformValues(json) {
+			boolean dslProp = it instanceof DslProperty
+			if (dslProp) {
+				DslProperty dslProperty = ((DslProperty) it)
+				return clientSide ?
+						getClientOrServerSideValues(dslProperty.clientValue, clientSide) : getClientOrServerSideValues(dslProperty.serverValue, clientSide)
+			}
+			return it
+		}
 	}
 
 	protected static def traverseRecursively(Class parentType, String key, def value, Closure closure) {
@@ -68,14 +92,8 @@ class JsonPathJsonConverter {
 		}
 	}
 
-	private static void traverseRecursivelyForKey(def json, String rootKey, JsonPaths pathsAndValues) {
-		traverseRecursively(Map, rootKey, json) { boolean applyFiltering = false, String key, Object value ->
-			if (value instanceof ExecutionProperty) {
-				return
-			}
-			JsonPathEntry entry = getValueToInsert(applyFiltering, key, value)
-			pathsAndValues.add(entry)
-		}
+	private static void traverseRecursivelyForKey(def json, String rootKey, JsonPaths pathsAndValues, Closure closure) {
+		traverseRecursively(Map, rootKey, json, closure)
 	}
 
 	private static JsonPathEntry getValueToInsert(boolean applyFiltering, String key, Object value) {

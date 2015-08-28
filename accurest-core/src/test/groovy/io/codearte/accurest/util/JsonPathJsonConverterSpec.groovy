@@ -1,11 +1,10 @@
 package io.codearte.accurest.util
-
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import jarjar.com.jayway.jsonpath.Configuration
 import jarjar.com.jayway.jsonpath.DocumentContext
 import jarjar.com.jayway.jsonpath.JsonPath
 import jarjar.com.jayway.jsonpath.Option
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -174,4 +173,5 @@ class JsonPathJsonConverterSpec extends Specification {
 			assert parsedJson.read(it.jsonPath, JSONArray).getAt(it.optionalSuffix ?: 0) == it.optionalSuffix ? [it.value] : it.value
 		}
 	}
+
 }

@@ -394,4 +394,38 @@ class MockMvcSpockMethodBuilderSpec extends Specification {
 		then:
 			spockTest.contains('''response.header('Location') ==~ java.util.regex.Pattern.compile('^((http[s]?|ftp):\\/)\\/?([^:\\/\\s]+)(:[0-9]{1,5})?/partners/[0-9]+/users/[0-9]+')''')
 	}
+
+	def "should work with more complex stuff and jsonpaths"() {
+		given:
+			GroovyDsl contractDsl = GroovyDsl.make {
+				priority 10
+				request {
+					method 'POST'
+					url '/validation/client'
+					headers {
+						header 'Content-Type': 'application/json'
+					}
+					body(
+							bank_account_number: '0014282912345698765432161182',
+							email: 'foo@bar.com',
+							phone_number: '100299300',
+							personal_id: 'ABC123456'
+					)
+				}
+
+				response {
+					status 200
+					body(errors: [
+							[property: "bank_account_number", message: "incorrect_format"]
+					])
+				}
+			}
+			MockMvcSpockMethodBodyBuilder builder = new MockMvcSpockMethodBodyBuilder(contractDsl)
+			BlockBuilder blockBuilder = new BlockBuilder(" ")
+		when:
+			builder.appendTo(blockBuilder)
+			def spockTest = blockBuilder.toString()
+		then:
+			spockTest.contains('''response.header('Location') ==~ java.util.regex.Pattern.compile('^((http[s]?|ftp):\\/)\\/?([^:\\/\\s]+)(:[0-9]{1,5})?/partners/[0-9]+/users/[0-9]+')''')
+	}
 }
