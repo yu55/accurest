@@ -29,6 +29,7 @@ class AccurestGradlePlugin implements Plugin<Project> {
 		createGenerateTestsTask(extension)
 		createAndConfigureGenerateWireMockClientStubsFromDslTask(extension)
 		deprecatedCreateAndConfigureGenerateWiremockClientStubsFromDslTask()
+		project.dependencies.add("testCompile", "io.codearte.accurest:accurest-core:+")
 
 		project.afterEvaluate {
 			def hasIdea = project.plugins.findPlugin(IDEA_PLUGIN_CLASS)

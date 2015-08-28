@@ -121,6 +121,14 @@ project(':accurest-core') {
 	}
 
 	compileJava.source relocate.outputs.files, sourceSets.main.java
+
+	sourceSets {
+		main {
+			java {
+				srcDirs file("$buildDir/generated-sources")
+			}
+		}
+	}
 }
 
 project(':accurest-converters') {
