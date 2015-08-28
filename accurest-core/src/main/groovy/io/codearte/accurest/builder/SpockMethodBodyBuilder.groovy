@@ -149,7 +149,7 @@ abstract class SpockMethodBodyBuilder {
 	}
 
 	protected void appendJsonPath(BlockBuilder blockBuilder, String json) {
-		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.parse($json)")
+		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST).build()).parse($json)")
 	}
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, ExecutionProperty exec) {

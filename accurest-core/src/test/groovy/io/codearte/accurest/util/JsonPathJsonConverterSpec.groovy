@@ -160,9 +160,9 @@ class JsonPathJsonConverterSpec extends Specification {
 			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
 			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]''']
 			(pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] as Pattern).pattern() == '[a-zA-Z]+'
-		//when:
-			//pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] = "Kowalski"
-			//json.some.nested.withlist[0][2].anothernested.name = "Kowalski"
+		when:
+			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] = "Kowalski"
+			json.some.nested.withlist[0][2].anothernested.name = "Kowalski"
 		and:
 			assertThatJsonPathsInMapAreValid(JsonOutput.prettyPrint(JsonOutput.toJson(json)), pathAndValues)
 		}
