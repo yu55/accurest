@@ -16,7 +16,7 @@ class JsonPathJsonConverterSpec extends Specification {
 	@Unroll
 	def 'should convert a json with list as root to a map of path to value'() {
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4
@@ -94,7 +94,7 @@ class JsonPathJsonConverterSpec extends Specification {
 						}
 '''
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$.some.nested.json'] == 'with value'
 			pathAndValues['$.some.nested.anothervalue'] == 4
@@ -112,7 +112,7 @@ class JsonPathJsonConverterSpec extends Specification {
 					}
 '''
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['''$.items[?(@ == 'HOP')]'''] == 'HOP'
 		and:
@@ -153,7 +153,7 @@ class JsonPathJsonConverterSpec extends Specification {
 					]
 			]
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithValues(json)
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(json)
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4
@@ -163,7 +163,7 @@ class JsonPathJsonConverterSpec extends Specification {
 		when:
 			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] = "Kowalski"
 			json.some.nested.withlist[0][2].anothernested.name = "Kowalski"
-		and:
+		then:
 			assertThatJsonPathsInMapAreValid(JsonOutput.prettyPrint(JsonOutput.toJson(json)), pathAndValues)
 		}
 

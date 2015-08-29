@@ -86,7 +86,7 @@ abstract class SpockMethodBodyBuilder {
 		}
 		if (contentType == ContentType.JSON) {
 			appendJsonPath(bb, responseAsString)
-			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithClientSideValues(responseBody)
+			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(responseBody)
 			jsonPaths.each {
 				bb.addLine(it.buildJsonPathComparison('parsedJson'))
 			}
@@ -149,7 +149,7 @@ abstract class SpockMethodBodyBuilder {
 	}
 
 	protected void appendJsonPath(BlockBuilder blockBuilder, String json) {
-		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST).build()).parse($json)")
+		blockBuilder.addLine("DocumentContext parsedJson = JsonPath.parse($json)")
 	}
 
 	protected void processBodyElement(BlockBuilder blockBuilder, String property, ExecutionProperty exec) {

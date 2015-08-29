@@ -15,7 +15,7 @@ class JsonPathJsonConverter {
 	public static final String ROOT_JSON_PATH_ELEMENT = '$'
 	public static final String ALL_ELEMENTS = "[*]"
 
-	public static JsonPaths transformToJsonPathWithClientSideValues(def json) {
+	public static JsonPaths transformToJsonPathWithStubsSideValues(def json) {
 		return transformToJsonPathWithValues(json, CLIENT_SIDE)
 	}
 

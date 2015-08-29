@@ -16,7 +16,7 @@ class JsonPaths extends HashSet<JsonPathEntry> {
 			return null
 		}
 		Object oldValue = entry.value
-		entry.value = value
+		add(new JsonPathEntry(entry.jsonPath, entry.optionalSuffix, value))
 		return oldValue
 	}
 }
