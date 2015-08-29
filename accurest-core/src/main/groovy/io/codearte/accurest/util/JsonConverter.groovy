@@ -1,16 +1,16 @@
 package io.codearte.accurest.util
 
 import groovy.json.JsonSlurper
+import io.codearte.accurest.dsl.internal.DslProperty
 
 /**
  * @author Marcin Grzejszczak
  */
 class JsonConverter {
 
-	private static Map convert(Map map, Closure closure) {
-		return map.collectEntries {
-			key, value ->
-				[key, transformValues(value, closure)]
+	static def transformToClientValues(def value) {
+		return transformValues(value) {
+			it instanceof DslProperty ? it.serverValue : it
 		}
 	}
 
@@ -33,6 +33,13 @@ class JsonConverter {
 			return closure(value)
 		} catch (Exception ignore) {
 			return value
+		}
+	}
+
+	private static Map convert(Map map, Closure closure) {
+		return map.collectEntries {
+			key, value ->
+				[key, transformValues(value, closure)]
 		}
 	}
 

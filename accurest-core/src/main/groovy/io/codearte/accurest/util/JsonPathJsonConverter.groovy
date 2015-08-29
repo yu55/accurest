@@ -10,7 +10,7 @@ import java.util.regex.Pattern
 class JsonPathJsonConverter {
 
 	private static final Boolean SERVER_SIDE = false
-
+	private static final Boolean CLIENT_SIDE = true
 
 	public static final String ROOT_JSON_PATH_ELEMENT = '$'
 	public static final String ALL_ELEMENTS = "[*]"
@@ -19,7 +19,11 @@ class JsonPathJsonConverter {
 		return transformToJsonPathWithValues(json, SERVER_SIDE)
 	}
 
-	public static JsonPaths transformToJsonPathWithValues(def json, boolean clientSide) {
+	public static JsonPaths transformToJsonPathWithStubsSideValues(def json) {
+		return transformToJsonPathWithValues(json, CLIENT_SIDE)
+	}
+
+	private static JsonPaths transformToJsonPathWithValues(def json, boolean clientSide) {
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = getClientOrServerSideValues(json, clientSide)
 		traverseRecursivelyForKey(convertedJson, ROOT_JSON_PATH_ELEMENT, pathsAndValues) { boolean applyFiltering = false, String key, Object value ->
