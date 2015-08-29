@@ -64,10 +64,9 @@ class SingleTestGenerator {
 	}
 
 	private ClassBuilder addJsonPathRelatedImports(ClassBuilder clazz) {
-		clazz.addImport(['jarjar.com.jayway.jsonpath.Configuration',
-						 'jarjar.com.jayway.jsonpath.DocumentContext',
+		clazz.addImport(['jarjar.com.jayway.jsonpath.DocumentContext',
 						 'jarjar.com.jayway.jsonpath.JsonPath',
-						 'net.minidev.json.JSONArray'])
+						 'jarjar.net.minidev.json.JSONArray'])
 	}
 
 }

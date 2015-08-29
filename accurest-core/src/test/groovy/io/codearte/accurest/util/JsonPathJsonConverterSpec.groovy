@@ -5,7 +5,7 @@ import jarjar.com.jayway.jsonpath.Configuration
 import jarjar.com.jayway.jsonpath.DocumentContext
 import jarjar.com.jayway.jsonpath.JsonPath
 import jarjar.com.jayway.jsonpath.Option
-import net.minidev.json.JSONArray
+import jarjar.net.minidev.json.JSONArray
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -16,7 +16,7 @@ class JsonPathJsonConverterSpec extends Specification {
 	@Unroll
 	def 'should convert a json with list as root to a map of path to value'() {
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4
@@ -94,7 +94,7 @@ class JsonPathJsonConverterSpec extends Specification {
 						}
 '''
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['$.some.nested.json'] == 'with value'
 			pathAndValues['$.some.nested.anothervalue'] == 4
@@ -112,9 +112,31 @@ class JsonPathJsonConverterSpec extends Specification {
 					}
 '''
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues['''$.items[?(@ == 'HOP')]'''] == 'HOP'
+		and:
+			assertThatJsonPathsInMapAreValid(json, pathAndValues)
+		}
+
+
+	def 'should convert a json with a list of errors'() {
+		given:
+			String json = '''
+					 {
+							"errors" : [
+								{ "property" : "email", "message" : "inconsistent value" },
+								{ "property" : "email", "message" : "inconsistent value2" }
+							]
+					}
+'''
+		when:
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+			pathAndValues['''$.errors[*][?(@.property == 'email')]'''] == 'email'
+			pathAndValues['''$.errors[*][?(@.message == 'inconsistent value')]'''] == 'inconsistent value'
+			pathAndValues['''$.errors[*][?(@.message == 'inconsistent value2')]'''] == 'inconsistent value2'
+			pathAndValues['''$.errors[*][?(@.property == 'email')]'''] == 'email'
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		}
@@ -153,7 +175,7 @@ class JsonPathJsonConverterSpec extends Specification {
 					]
 			]
 		when:
-			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(json)
+			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
 			pathAndValues['$[*].some.nested.json'] == 'with value'
 			pathAndValues['$[*].some.nested.anothervalue'] == 4

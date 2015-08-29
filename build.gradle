@@ -95,7 +95,9 @@ project(':accurest-core') {
 		compile 'org.apache.commons:commons-lang3:[3.3,)'
 		compile 'com.google.code.gson:gson:2.3.1'
 		compile 'com.fasterxml.jackson.core:jackson-databind:2.4.5'
-		compile 'net.minidev:json-smart:2.1.1'
+		compile 'asm:asm:3.3.1'
+		shade 'net.minidev:asm:1.0.2:sources'
+		shade 'net.minidev:json-smart:2.1.1:sources'
 		shade 'com.jayway.jsonpath:json-path:2.0.0:sources'
 		testCompile 'cglib:cglib-nodep:2.2'
 		testCompile 'org.objenesis:objenesis:2.1'
@@ -105,18 +107,11 @@ project(':accurest-core') {
 	assemble.dependsOn('relocate')
 
 	task relocate(type:Copy) {
-		configurations.shade.each { dep ->
-			from(project.zipTree(dep)){
-				exclude 'META-INF', 'META-INF/**'
-			}
-			filter { String line ->
-				if (line.contains('com.jayway.jsonpath') && !line.contains('jarjar.com.jayway.jsonpath')) {
-					return line.replaceAll('com\\.jayway\\.jsonpath', 'jarjar.com.jayway.jsonpath')
-				}
-				return line
-			}
-			into 'build/generated-sources/jarjar'
+		from(configurations.shade.collect { project.zipTree(it) } ){
+			exclude 'META-INF', 'META-INF/**'
 		}
+		filter { String line ->  convertLines(line, ['com.jayway.jsonpath', 'net.minidev']) }
+		into 'build/generated-sources/jarjar'
 		outputs.dir file("$buildDir/generated-sources/")
 	}
 
@@ -129,6 +124,14 @@ project(':accurest-core') {
 			}
 		}
 	}
+}
+
+private String convertLines(String line, List<String> packageNames) {
+	String packageName = packageNames.find {  line.contains(it) }
+	if (packageName && !line.contains("jarjar.$packageName")) {
+		return line.replaceAll(packageName, "jarjar.$packageName")
+	}
+	return line
 }
 
 project(':accurest-converters') {

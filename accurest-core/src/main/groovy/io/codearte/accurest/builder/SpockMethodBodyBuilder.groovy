@@ -86,9 +86,11 @@ abstract class SpockMethodBodyBuilder {
 		}
 		if (contentType == ContentType.JSON) {
 			appendJsonPath(bb, responseAsString)
-			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(responseBody)
+			JsonPaths jsonPaths = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(responseBody)
 			jsonPaths.each {
-				bb.addLine(it.buildJsonPathComparison('parsedJson'))
+				it.buildJsonPathComparison('parsedJson').each {
+					bb.addLine(it)
+				}
 			}
 			processBodyElement(bb, "", responseBody)
 		} else if (contentType == ContentType.XML) {

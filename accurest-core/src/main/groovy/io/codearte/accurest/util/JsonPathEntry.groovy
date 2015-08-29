@@ -13,11 +13,18 @@ class JsonPathEntry {
 		this.value = value
 	}
 	
-	String buildJsonPathComparison(String parsedJsonVariable) {
-		if(optionalSuffix) {
-			return "!${parsedJsonVariable}.read('''${jsonPath}''').empty"
+	List<String> buildJsonPathComparison(String parsedJsonVariable) {
+		if (optionalSuffix) {
+			return ["!${parsedJsonVariable}.read('''${jsonPath}''', JSONArray).empty"]
+		} else if (traversesOverCollections()) {
+			return ["${parsedJsonVariable}.read('''${jsonPath}''', JSONArray).size() == 1",
+					"${parsedJsonVariable}.read('''${jsonPath}''', JSONArray).get(0) ${operator()} ${potentiallyWrappedWithQuotesValue()}"]
 		}
-		return "${parsedJsonVariable}.read('''${jsonPath}''') ${operator()} ${potentiallyWrappedWithQuotesValue()}"
+		return ["${parsedJsonVariable}.read('''${jsonPath}''') ${operator()} ${potentiallyWrappedWithQuotesValue()}"]
+	}
+
+	private boolean traversesOverCollections() {
+		return jsonPath.contains('[*]')
 	}
 
 	String operator() {

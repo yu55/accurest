@@ -9,14 +9,14 @@ import java.util.regex.Pattern
  */
 class JsonPathJsonConverter {
 
-	private static final Boolean CLIENT_SIDE = true
+	private static final Boolean SERVER_SIDE = false
 
 
 	public static final String ROOT_JSON_PATH_ELEMENT = '$'
 	public static final String ALL_ELEMENTS = "[*]"
 
-	public static JsonPaths transformToJsonPathWithStubsSideValues(def json) {
-		return transformToJsonPathWithValues(json, CLIENT_SIDE)
+	public static JsonPaths transformToJsonPathWithTestsSideValues(def json) {
+		return transformToJsonPathWithValues(json, SERVER_SIDE)
 	}
 
 	public static JsonPaths transformToJsonPathWithValues(def json, boolean clientSide) {
@@ -56,6 +56,8 @@ class JsonPathJsonConverter {
 			}
 		} else if (isAnEntryWithNonCollectionLikeValue(value)) {
 			return convertWithKey(List, key, value as Map, closure)
+		} else if (isAnEntryWithoutNestedStructures(value)) {
+			return convertWithKey(List, key, value as Map, closure)
 		} else if (value instanceof Map) {
 			return convertWithKey(Map, key, value as Map, closure)
 		} else if (value instanceof List) {
@@ -82,7 +84,16 @@ class JsonPathJsonConverter {
 		}
 		Object valueOfEntry = valueAsMap.entrySet().first().value
 		return !(valueOfEntry instanceof Map || valueOfEntry instanceof List)
+	}
 
+	private static boolean isAnEntryWithoutNestedStructures(def value) {
+		if (!(value instanceof Map)) {
+			return false
+		}
+		Map valueAsMap = ((Map) value)
+		return valueAsMap.entrySet().every { Map.Entry entry ->
+			[String, Number].any { entry.value.getClass().isAssignableFrom(it) }
+		}
 	}
 
 	private static Map convertWithKey(Class parentType, String parentKey, Map map, Closure closureToExecute) {
