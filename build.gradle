@@ -48,6 +48,7 @@ subprojects {
 	repositories {
 		mavenLocal()
 		mavenCentral()
+		jcenter()
 	}
 
 	//Dependencies in all subprojects - http://solidsoft.wordpress.com/2014/11/13/gradle-tricks-display-dependencies-for-all-subprojects-in-multi-project-build/
@@ -96,7 +97,7 @@ project(':accurest-core') {
 		compile 'com.google.code.gson:gson:2.3.1'
 		compile 'com.fasterxml.jackson.core:jackson-databind:2.4.5'
 		compile 'asm:asm:3.3.1'
-		compile 'com.github.tomakehurst:wiremock:1.+'
+		compile 'com.blogspot.toomuchcoding:wiremock:0.0.1'
 		shade 'net.minidev:asm:1.0.2:sources'
 		shade 'net.minidev:json-smart:2.1.1:sources'
 		shade 'com.jayway.jsonpath:json-path:2.0.0:sources'
@@ -141,7 +142,7 @@ project(':accurest-converters') {
 		compile 'org.apache.commons:commons-lang3:[3.0,)'
 		compile 'commons-io:commons-io:[2.0,)'
 		compile 'dk.brics.automaton:automaton:1.11-8' // needed for Xeger
-		testCompile 'com.github.tomakehurst:wiremock:1.57'
+		testCompile 'com.blogspot.toomuchcoding:wiremock:0.0.1'
 		testCompile 'org.hamcrest:hamcrest-all:1.3'
 	}
 }
