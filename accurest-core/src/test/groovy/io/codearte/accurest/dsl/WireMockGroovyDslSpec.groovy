@@ -37,17 +37,17 @@ class WireMockGroovyDslSpec extends WireMockSpec {
 		then:
 			new JsonSlurper().parseText(wireMockStub) == new JsonSlurper().parseText('''
 {
-    "request": {
-        "method": "GET",
-        "urlPattern": "/[0-9]{2}"
-    },
-    "response": {
-        "status": 200,
-        "body": "{\\"id\\":\\"123\\",\\"surname\\":\\"Kowalsky\\",\\"name\\":\\"Jan\\",\\"created\\":\\"2014-02-02 12:23:43\\"}",
-        "headers": {
-            "Content-Type": "text/plain"
-        }
+  "request" : {
+    "urlPattern" : "/[0-9]{2}",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\\"id\\":\\"123\\",\\"surname\\":\\"Kowalsky\\",\\"name\\":\\"Jan\\",\\"created\\":\\"2014-02-02 12:23:43\\"}",
+    "headers" : {
+      "Content-Type" : "text/plain"
     }
+  }
 }
 ''')
 		and:
@@ -82,19 +82,19 @@ class WireMockGroovyDslSpec extends WireMockSpec {
 		then:
 			new JsonSlurper().parseText(wireMockStub) == new JsonSlurper().parseText('''
 {
-    "request": {
-        "method": "GET",
-        "headers": {
-            "Content-Type": {
-                "equalTo": "application/vnd.pl.devoxx.aggregatr.v1+json"
-            }
-        },
-        "url": "/ingredients"
-    },
-    "response": {
-        "status": 200,
-        "body": "{\\"ingredients\\":[{\\"type\\":\\"MALT\\",\\"quantity\\":100},{\\"type\\":\\"WATER\\",\\"quantity\\":200},{\\"type\\":\\"HOP\\",\\"quantity\\":300},{\\"type\\":\\"YIEST\\",\\"quantity\\":400}]}"
+  "request" : {
+    "url" : "/ingredients",
+    "method" : "GET",
+    "headers" : {
+      "Content-Type" : {
+        "equalTo" : "application/vnd.pl.devoxx.aggregatr.v1+json"
+      }
     }
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\\"ingredients\\":[{\\"type\\":\\"MALT\\",\\"quantity\\":100},{\\"type\\":\\"WATER\\",\\"quantity\\":200},{\\"type\\":\\"HOP\\",\\"quantity\\":300},{\\"type\\":\\"YIEST\\",\\"quantity\\":400}]}"
+  }
 }
 ''')
 		and:
@@ -616,25 +616,27 @@ class WireMockGroovyDslSpec extends WireMockSpec {
 		then:
 			new JsonSlurper().parseText(wireMockStub) == new JsonSlurper().parseText('''
 {
-    "request": {
-        "method": "PUT",
-        "headers": {
-            "Content-Type": {
-                "equalTo": "application/vnd.fraud.v1+json"
-            }
-        },
-        "url": "/fraudcheck",
-        "bodyPatterns": [
-			{"matches": "\\\\s*\\\\{\\\\s*\\"clientPesel\\"\\\\s*:\\\\s*\\"?[0-9]{10}\\"?\\\\s*,\\\\s*\\"loanAmount\\"\\\\s*:\\\\s*\\"?123.123\\"?\\\\s*\\\\}\\\\s*"}
-        ]
-    },
-    "response": {
-        "status": 200,
-        "headers": {
-            "Content-Type": "application/vnd.fraud.v1+json"
-        },
-        "body": "{\\"fraudCheckStatus\\":\\"OK\\",\\"rejectionReason\\":null}"
+  "request" : {
+    "url" : "/fraudcheck",
+    "method" : "PUT",
+    "bodyPatterns" : [ {
+      "matchesJsonPath" : "$[?(@.loanAmount == 123.123)]"
+    }, {
+      "matchesJsonPath" : "$[?(@.clientPesel =~ /[0-9]{10}/)]"
+    } ],
+    "headers" : {
+      "Content-Type" : {
+        "equalTo" : "application/vnd.fraud.v1+json"
+      }
     }
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\\"fraudCheckStatus\\":\\"OK\\",\\"rejectionReason\\":null}",
+    "headers" : {
+      "Content-Type" : "application/vnd.fraud.v1+json"
+    }
+  }
 }
 ''')
 		and:

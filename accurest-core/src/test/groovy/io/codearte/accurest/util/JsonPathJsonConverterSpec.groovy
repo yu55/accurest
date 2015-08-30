@@ -18,8 +18,8 @@ class JsonPathJsonConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['$[*].some.nested.json'] == 'with value'
-			pathAndValues['$[*].some.nested.anothervalue'] == 4
+			pathAndValues['''$[*].some.nested[?(@.json == 'with value')]'''] == 'with value'
+			pathAndValues['''$[*].some.nested[?(@.anothervalue == 4)]'''] == 4
 			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
 			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
 			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name == 'name3')]'''] == 'name3'
@@ -96,8 +96,8 @@ class JsonPathJsonConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['$.some.nested.json'] == 'with value'
-			pathAndValues['$.some.nested.anothervalue'] == 4
+			pathAndValues['''$.some.nested[?(@.json == 'with value')]'''] == 'with value'
+			pathAndValues['''$.some.nested[?(@.anothervalue == 4)]'''] == 4
 			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
 			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
 		and:
@@ -177,8 +177,8 @@ class JsonPathJsonConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonPathJsonConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
-			pathAndValues['$[*].some.nested.json'] == 'with value'
-			pathAndValues['$[*].some.nested.anothervalue'] == 4
+			pathAndValues['''$[*].some.nested[?(@.json == 'with value')]'''] == 'with value'
+			pathAndValues['''$[*].some.nested[?(@.anothervalue == 4)]'''] == 4
 			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
 			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]''']
 			(pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] as Pattern).pattern() == '[a-zA-Z]+'

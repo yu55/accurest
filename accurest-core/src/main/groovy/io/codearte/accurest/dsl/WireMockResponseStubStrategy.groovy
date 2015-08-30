@@ -33,7 +33,10 @@ class WireMockResponseStubStrategy extends BaseWireMockStubStrategy {
 	}
 
 	private void appendHeaders(ResponseDefinition responseDefinition) {
-		responseDefinition.setHeaders(new HttpHeaders(response?.headers?.entries?.collect { new HttpHeader(it.name, it.clientValue.toString()) }))
+		if(!(response.headers)) {
+			return
+		}
+		responseDefinition.setHeaders(new HttpHeaders(response.headers.entries?.collect { new HttpHeader(it.name, it.clientValue.toString()) }))
 	}
 
 	private void appendBody(ResponseDefinition responseDefinition) {

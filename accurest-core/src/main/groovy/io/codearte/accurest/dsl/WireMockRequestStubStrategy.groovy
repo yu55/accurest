@@ -7,10 +7,9 @@ import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
 import io.codearte.accurest.dsl.internal.*
 import io.codearte.accurest.util.ContentType
-import io.codearte.accurest.util.JsonConverter
+import io.codearte.accurest.util.ContentUtils
 import io.codearte.accurest.util.JsonPathJsonConverter
 import io.codearte.accurest.util.JsonPaths
-import org.codehaus.groovy.runtime.GStringImpl
 
 import java.util.regex.Pattern
 
@@ -45,17 +44,13 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 
 	private void appendBody(RequestPattern requestPattern) {
 		JsonPaths values = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(getMatchingStrategyFromBody(request?.body)?.clientValue)
-		requestPattern.bodyPatterns = values.collect { new ValuePattern(matchesJsonPath: it.jsonPath) }
+		requestPattern.bodyPatterns = values.collect { new ValuePattern(matchesJsonPath: it.jsonPath) } ?: null
 	}
 
 	private void appendHeaders(RequestPattern requestPattern) {
 		request.headers?.entries?.each {
 			requestPattern.addHeader(it.name, convertToValuePattern(it.clientValue))
 		}
-	}
-
-	private void getMatchingStrategyFromBody(RequestPattern requestPattern) {
-		requestPattern.setBodyPatterns([convertToValuePattern(request?.body?.clientValue)])
 	}
 
 	private void appendUrl(RequestPattern requestPattern) {
@@ -91,8 +86,15 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 				return ValuePattern.equalTo(object.toString())
 		}
 	}
+/*
+	private void getMatchingStrategyFromBody(RequestPattern requestPattern) {
+		requestPattern.setBodyPatterns([convertToValuePattern(request?.body?.clientValue)])
+	}*/
 
 	private MatchingStrategy getMatchingStrategyFromBody(Body body) {
+		if(!body) {
+			return null
+		}
 		return appendBodyPatterns(body.clientValue)
 	}
 
@@ -100,9 +102,7 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		return appendBodyPattern(matchingStrategy)
 	}
 	private MatchingStrategy appendBodyPatterns(GString gString) {
-		return appendBodyPatterns(JsonConverter.transformToClientValues(new GStringImpl(
-				gString.values.collect { it instanceof DslProperty ? it.clientValue : it } as Object[],
-				gString.strings).toString()))
+		return appendBodyPatterns(ContentUtils.extractValue(gString) { it instanceof DslProperty ? it.clientValue : it })
 	}
 
 	private MatchingStrategy appendBodyPatterns(Object bodyValue) {
