@@ -97,8 +97,17 @@ abstract class SpockMethodBodyBuilder {
 			bb.addLine("def responseBody = new XmlSlurper().parseText($responseAsString)")
 			// TODO xml validation
 		}   else {
-			appendJsonPath(bb, responseAsString)
-			processBodyElement(bb, "", responseBody)
+			bb.addLine("def responseBody = ($responseAsString)")
+			processText(bb, "", responseBody as String)
+		}
+	}
+
+	protected void processText(BlockBuilder blockBuilder, String property, String value) {
+		if (value.startsWith('$')) {
+			value = value.substring(1).replaceAll('\\$value', "responseBody$property")
+			blockBuilder.addLine(value)
+		} else {
+			blockBuilder.addLine("responseBody$property == \"${value}\"")
 		}
 	}
 
