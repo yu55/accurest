@@ -1,5 +1,6 @@
 package io.codearte.accurest.util
 import groovy.json.JsonException
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.TypeChecked
 import groovy.util.logging.Slf4j
@@ -17,6 +18,10 @@ import static org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 @TypeChecked
 @Slf4j
 class ContentUtils {
+
+	public static final Closure GET_STUB_SIDE = {
+		it instanceof DslProperty ? it.clientValue : it
+	}
 
 	private static final Pattern TEMPORARY_PATTERN_HOLDER = Pattern.compile('REGEXP>>(.*)<<')
 	private static final String JSON_VALUE_PATTERN_FOR_REGEX = 'REGEXP>>%s<<'
@@ -59,34 +64,55 @@ class ContentUtils {
 		}
 	}
 
-	public static ContentType getContentType(GString bodyAsValue, Closure valueProvider) {
+	public static ContentType getClientContentType(GString bodyAsValue) {
 		try {
-			extractValueForJSON(bodyAsValue, valueProvider)
+			extractValueForJSON(bodyAsValue, GET_STUB_SIDE)
 			return ContentType.JSON
 		} catch(JsonException e) {
 			try {
-				extractValueForXML(bodyAsValue, valueProvider)
+				new XmlSlurper().parseText(extractValueForXML(bodyAsValue, GET_STUB_SIDE).toString())
 				return ContentType.XML
 			} catch (Exception exception) {
-				extractValueForGString(bodyAsValue, valueProvider)
+				extractValueForGString(bodyAsValue, GET_STUB_SIDE)
 				return ContentType.UNKNOWN
 			}
 		}
 	}
-	public static ContentType getContentType(Object value) {
-		if ( (value instanceof String || value instanceof GString) && value) {
+
+	public static ContentType getClientContentType(String bodyAsValue) {
+		try {
+			new JsonSlurper().parseText(bodyAsValue)
+			return ContentType.JSON
+		} catch(JsonException e) {
 			try {
-				new JsonSlurper().parseText(value.toString())
-				return ContentType.JSON
-			} catch (Exception ignore) {
+				new XmlSlurper().parseText(bodyAsValue)
+				return ContentType.XML
+			} catch (Exception exception) {
 				return ContentType.UNKNOWN
 			}
-		} else if (value instanceof Map) {
-			return ContentType.JSON
-		} else if (value instanceof List) {
-			return ContentType.JSON
 		}
+	}
+
+	public static ContentType getClientContentType(Object bodyAsValue) {
 		return ContentType.UNKNOWN
+	}
+
+	public static ContentType getClientContentType(Map bodyAsValue) {
+		try {
+			JsonOutput.toJson(bodyAsValue)
+			return ContentType.JSON
+		} catch (Exception ignore) {
+			return ContentType.UNKNOWN
+		}
+	}
+
+	public static ContentType getClientContentType(List bodyAsValue) {
+		try {
+			JsonOutput.toJson(bodyAsValue)
+			return ContentType.JSON
+		} catch (Exception ignore) {
+			return ContentType.UNKNOWN
+		}
 	}
 
 	private static GStringImpl extractValueForGString(GString bodyAsValue, Closure valueProvider) {

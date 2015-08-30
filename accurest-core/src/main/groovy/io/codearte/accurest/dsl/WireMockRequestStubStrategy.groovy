@@ -60,6 +60,8 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 			} else {
 				requestPattern.bodyPatterns = values.collect { new ValuePattern(matchesJsonPath: it.jsonPath) } ?: null
 			}
+		} else if (contentType == ContentType.XML) {
+			requestPattern.bodyPatterns = [new ValuePattern(equalToXml: getMatchingStrategy(request.body.clientValue).clientValue.toString())]
 		} else if (containsPattern(request?.body)) {
 				MatchingStrategy matchingStrategy = appendBodyRegexpMatchPattern(request.body)
 				requestPattern.bodyPatterns = [convertToValuePattern(matchingStrategy)]
@@ -71,7 +73,10 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 	private ContentType tryToGetContentType() {
 		ContentType contentType = recognizeContentTypeFromHeader(request.headers)
 		if (contentType == ContentType.UNKNOWN) {
-			return ContentUtils.getContentType(request.body.clientValue)
+			if (!request.body.clientValue) {
+				return ContentType.UNKNOWN
+			}
+			return ContentUtils.getClientContentType(request.body.clientValue)
 		}
 		return contentType
 	}
@@ -116,7 +121,14 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 				return ValuePattern.matches(value.pattern())
 			case MatchingStrategy:
 				MatchingStrategy value = object as MatchingStrategy
-				return ValuePattern."${value.type.name}"(value.clientValue)
+				switch (value.type) {
+					case MatchingStrategy.Type.NOT_MATCHING:
+						return new ValuePattern(doesNotMatch: value.clientValue)
+					case MatchingStrategy.Type.ABSENT:
+						return ValuePattern.absent()
+					default:
+						return ValuePattern."${value.type.name}"(value.clientValue)
+				}
 			default:
 				return ValuePattern.equalTo(object.toString())
 		}
@@ -133,7 +145,18 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		return getMatchingStrategyIncludingContentType(matchingStrategy)
 	}
 	private MatchingStrategy getMatchingStrategy(GString gString) {
-		return getMatchingStrategy(ContentUtils.extractValue(gString) { it instanceof DslProperty ? it.clientValue : (it instanceof GString ? it.toString() : it) })
+		if (!gString) {
+			return new MatchingStrategy("", MatchingStrategy.Type.EQUAL_TO)
+		}
+		def extractedValue = ContentUtils.extractValue(gString) {
+			it instanceof DslProperty ? it.clientValue : getStringFromGString(it)
+		}
+		def value = getStringFromGString(extractedValue)
+		return getMatchingStrategy(value)
+	}
+
+	private def getStringFromGString(Object object) {
+		return object instanceof GString ? object.toString() : object
 	}
 
 	private MatchingStrategy getMatchingStrategy(Object bodyValue) {

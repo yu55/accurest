@@ -238,7 +238,7 @@ class WireMockGroovyDslSpec extends WireMockSpec {
   },
   "response" : {
     "status" : 200,
-    "body" : "{\\\\"name\\\\":\\\\"Jan\\\\"}",
+    "body" : "{\\"name\\":\\"Jan\\"}",
     "headers" : {
       "Content-Type" : "text/plain"
     }
@@ -561,22 +561,22 @@ class WireMockGroovyDslSpec extends WireMockSpec {
 		then:
 		JSONAssert.assertEquals(('''
 {
-    "request": {
-        "method": "GET",
-        "urlPattern": "/[0-9]{2}",
-        "bodyPatterns": [
-			{"matches": "\\\\s*\\\\{\\\\s*\\\"personalId\\\"\\\\s*:\\\\s*\\\"?^[0-9]{11}$\\\"?\\\\s*\\\\}\\\\s*"}
-        ]
-    },
-    "response": {
-        "status": 200,
-        "body": "{\\"name\\":\\"Jan\\"}",
-        "headers": {
-            "Content-Type": "text/plain"
-        }
+  "request" : {
+    "urlPattern" : "/[0-9]{2}",
+    "method" : "GET",
+    "bodyPatterns" : [ {
+      "matchesJsonPath" : "$[?(@.personalId =~ /^[0-9]{11}$/)]"
+    } ]
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\\"name\\":\\"Jan\\"}",
+    "headers" : {
+      "Content-Type" : "text/plain"
     }
+  }
 }
-'''), json, false)
+'''), wireMockStub, false)
 		and:
 			stubMappingIsValidWireMockStub(wireMockStub)
 	}
