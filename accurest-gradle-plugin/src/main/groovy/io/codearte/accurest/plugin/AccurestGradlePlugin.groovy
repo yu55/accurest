@@ -37,7 +37,7 @@ class AccurestGradlePlugin implements Plugin<Project> {
 			all {
 				resolutionStrategy {
 					eachDependency { DependencyResolveDetails details ->
-						if (details.requested.group == 'com.github.tomakehurst' && details.requested.name != "wiremock") {
+						if (details.requested.group == 'com.github.tomakehurst' && details.requested.name == "wiremock") {
 							details.useTarget("com.blogspot.toomuchcoding:wiremock:0.0.1")
 						}
 					}
