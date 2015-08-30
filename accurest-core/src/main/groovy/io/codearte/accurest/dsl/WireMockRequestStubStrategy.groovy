@@ -2,6 +2,7 @@ package io.codearte.accurest.dsl
 import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.RequestPattern
 import com.github.tomakehurst.wiremock.matching.ValuePattern
+import groovy.json.JsonOutput
 import groovy.transform.PackageScope
 import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
@@ -10,6 +11,7 @@ import io.codearte.accurest.util.ContentType
 import io.codearte.accurest.util.ContentUtils
 import io.codearte.accurest.util.JsonPathJsonConverter
 import io.codearte.accurest.util.JsonPaths
+import io.codearte.accurest.util.MapConverter
 
 import java.util.regex.Pattern
 
@@ -39,16 +41,46 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 	}
 
 	private void appendMethod(RequestPattern requestPattern) {
-		requestPattern.setMethod(RequestMethod.fromString(request?.method?.clientValue?.toString()))
+		if(!request.method) {
+			return
+		}
+		requestPattern.setMethod(RequestMethod.fromString(request.method.clientValue?.toString()))
 	}
 
 	private void appendBody(RequestPattern requestPattern) {
-		JsonPaths values = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(getMatchingStrategyFromBody(request?.body)?.clientValue)
-		requestPattern.bodyPatterns = values.collect { new ValuePattern(matchesJsonPath: it.jsonPath) } ?: null
+		if (!request.body) {
+			return
+		}
+		ContentType contentType = tryToGetContentType()
+		if (contentType == ContentType.JSON) {
+			JsonPaths values = JsonPathJsonConverter.transformToJsonPathWithStubsSideValues(getMatchingStrategyFromBody(request.body)?.clientValue)
+			if (values.empty) {
+				requestPattern.bodyPatterns = [new ValuePattern(jsonCompareMode: org.skyscreamer.jsonassert.JSONCompareMode.LENIENT,
+						equalToJson: JsonOutput.toJson(getMatchingStrategy(request.body.clientValue).clientValue) ) ]
+			} else {
+				requestPattern.bodyPatterns = values.collect { new ValuePattern(matchesJsonPath: it.jsonPath) } ?: null
+			}
+		} else if (containsPattern(request?.body)) {
+				MatchingStrategy matchingStrategy = appendBodyRegexpMatchPattern(request.body)
+				requestPattern.bodyPatterns = [convertToValuePattern(matchingStrategy)]
+		} else {
+			requestPattern.bodyPatterns = [convertToValuePattern(getMatchingStrategy(request.body.clientValue))]
+		}
+	}
+
+	private ContentType tryToGetContentType() {
+		ContentType contentType = recognizeContentTypeFromHeader(request.headers)
+		if (contentType == ContentType.UNKNOWN) {
+			return ContentUtils.getContentType(request.body.clientValue)
+		}
+		return contentType
 	}
 
 	private void appendHeaders(RequestPattern requestPattern) {
-		request.headers?.entries?.each {
+		if(!request.headers) {
+			return
+		}
+		request.headers.entries.each {
 			requestPattern.addHeader(it.name, convertToValuePattern(it.clientValue))
 		}
 	}
@@ -57,6 +89,9 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		Object urlPath = request?.urlPath?.clientValue
 		if (urlPath) {
 			requestPattern.setUrlPath(urlPath.toString())
+		}
+		if(!request.url) {
+			return
 		}
 		Object url = request?.url?.clientValue
 		if(url instanceof Pattern) {
@@ -81,44 +116,41 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 				return ValuePattern.matches(value.pattern())
 			case MatchingStrategy:
 				MatchingStrategy value = object as MatchingStrategy
-				return ValuePattern."${value.type}"(value)
+				return ValuePattern."${value.type.name}"(value.clientValue)
 			default:
 				return ValuePattern.equalTo(object.toString())
 		}
 	}
-/*
-	private void getMatchingStrategyFromBody(RequestPattern requestPattern) {
-		requestPattern.setBodyPatterns([convertToValuePattern(request?.body?.clientValue)])
-	}*/
 
 	private MatchingStrategy getMatchingStrategyFromBody(Body body) {
 		if(!body) {
 			return null
 		}
-		return appendBodyPatterns(body.clientValue)
+		return getMatchingStrategy(body.clientValue)
 	}
 
-	private MatchingStrategy appendBodyPatterns(MatchingStrategy matchingStrategy) {
-		return appendBodyPattern(matchingStrategy)
+	private MatchingStrategy getMatchingStrategy(MatchingStrategy matchingStrategy) {
+		return getMatchingStrategyIncludingContentType(matchingStrategy)
 	}
-	private MatchingStrategy appendBodyPatterns(GString gString) {
-		return appendBodyPatterns(ContentUtils.extractValue(gString) { it instanceof DslProperty ? it.clientValue : it })
-	}
-
-	private MatchingStrategy appendBodyPatterns(Object bodyValue) {
-		return new MatchingStrategy(bodyValue, getEqualsTypeFromContentTypeHeader())
+	private MatchingStrategy getMatchingStrategy(GString gString) {
+		return getMatchingStrategy(ContentUtils.extractValue(gString) { it instanceof DslProperty ? it.clientValue : (it instanceof GString ? it.toString() : it) })
 	}
 
-	private MatchingStrategy appendBodyPattern(MatchingStrategy matchingStrategy) {
+	private MatchingStrategy getMatchingStrategy(Object bodyValue) {
+		return tryToFindMachingStrategy(bodyValue)
+	}
+
+	private MatchingStrategy tryToFindMachingStrategy(Object bodyValue) {
+		return new MatchingStrategy(MapConverter.transformToClientValues(bodyValue), getEqualsTypeFromContentTypeHeader())
+	}
+
+	private MatchingStrategy getMatchingStrategyIncludingContentType(MatchingStrategy matchingStrategy) {
 		MatchingStrategy.Type type = matchingStrategy.type
 		Object value = matchingStrategy.clientValue
 		ContentType contentType = recognizeContentTypeFromMatchingStrategy(type)
 		if (contentType == ContentType.UNKNOWN && type == MatchingStrategy.Type.EQUAL_TO) {
 			contentType = recognizeContentTypeFromContent(value)
 			type = getEqualsTypeFromContentType(contentType)
-		}
-		if (containsPattern(value)) {
-			return appendBodyRegexpMatchPattern(value, contentType)
 		}
 		return new MatchingStrategy(parseBody(value, contentType), type)
 	}
@@ -132,6 +164,10 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 			case ContentType.XML:
 				throw new IllegalStateException("XML pattern matching is not implemented yet")
 		}
+	}
+
+	private MatchingStrategy appendBodyRegexpMatchPattern(Object value) {
+		return appendBodyRegexpMatchPattern(value, ContentType.UNKNOWN)
 	}
 
 	private boolean containsPattern(GString bodyAsValue) {

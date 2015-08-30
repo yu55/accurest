@@ -41,7 +41,7 @@ class JsonPathJsonConverter {
 	}
 
 	private static Object getClientOrServerSideValues(json, boolean clientSide) {
-		return JsonConverter.transformValues(json) {
+		return MapConverter.transformValues(json) {
 			boolean dslProp = it instanceof DslProperty
 			if (dslProp) {
 				DslProperty dslProperty = ((DslProperty) it)

@@ -57,7 +57,36 @@ class ContentUtils {
 				return extractValueForGString(bodyAsValue, valueProvider)
 			}
 		}
+	}
 
+	public static ContentType getContentType(GString bodyAsValue, Closure valueProvider) {
+		try {
+			extractValueForJSON(bodyAsValue, valueProvider)
+			return ContentType.JSON
+		} catch(JsonException e) {
+			try {
+				extractValueForXML(bodyAsValue, valueProvider)
+				return ContentType.XML
+			} catch (Exception exception) {
+				extractValueForGString(bodyAsValue, valueProvider)
+				return ContentType.UNKNOWN
+			}
+		}
+	}
+	public static ContentType getContentType(Object value) {
+		if ( (value instanceof String || value instanceof GString) && value) {
+			try {
+				new JsonSlurper().parseText(value.toString())
+				return ContentType.JSON
+			} catch (Exception ignore) {
+				return ContentType.UNKNOWN
+			}
+		} else if (value instanceof Map) {
+			return ContentType.JSON
+		} else if (value instanceof List) {
+			return ContentType.JSON
+		}
+		return ContentType.UNKNOWN
 	}
 
 	private static GStringImpl extractValueForGString(GString bodyAsValue, Closure valueProvider) {
@@ -108,7 +137,7 @@ class ContentUtils {
 	}
 
 	private static Object convertAllTemporaryRegexPlaceholdersBackToPatterns(parsedJson) {
-		JsonConverter.transformValues(parsedJson, { Object value ->
+		MapConverter.transformValues(parsedJson, { Object value ->
 			if (value instanceof String) {
 				String string = (String) value
 				Matcher matcher = TEMPORARY_PATTERN_HOLDER.matcher(string)

@@ -40,7 +40,10 @@ class WireMockResponseStubStrategy extends BaseWireMockStubStrategy {
 	}
 
 	private void appendBody(ResponseDefinition responseDefinition) {
-		Object body = response?.body?.clientValue
+		if (!response.body) {
+			return
+		}
+		Object body = response.body.clientValue
 		ContentType contentType = recognizeContentTypeFromHeader(response.headers)
 		if (contentType == ContentType.UNKNOWN) {
 			contentType = recognizeContentTypeFromContent(body)

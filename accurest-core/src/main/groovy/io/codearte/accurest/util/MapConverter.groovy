@@ -6,11 +6,11 @@ import io.codearte.accurest.dsl.internal.DslProperty
 /**
  * @author Marcin Grzejszczak
  */
-class JsonConverter {
+class MapConverter {
 
 	static def transformToClientValues(def value) {
 		return transformValues(value) {
-			it instanceof DslProperty ? it.serverValue : it
+			it instanceof DslProperty ? it.clientValue : it
 		}
 	}
 

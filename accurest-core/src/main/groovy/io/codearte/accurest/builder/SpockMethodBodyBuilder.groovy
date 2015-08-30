@@ -5,7 +5,7 @@ import groovy.transform.TypeChecked
 import io.codearte.accurest.dsl.GroovyDsl
 import io.codearte.accurest.dsl.internal.*
 import io.codearte.accurest.util.ContentType
-import io.codearte.accurest.util.JsonConverter
+import io.codearte.accurest.util.MapConverter
 import io.codearte.accurest.util.JsonPathJsonConverter
 import io.codearte.accurest.util.JsonPaths
 
@@ -117,7 +117,7 @@ abstract class SpockMethodBodyBuilder {
 		if (bodyValue instanceof GString) {
 			bodyValue = extractValue(bodyValue, { DslProperty dslProperty -> dslProperty.serverValue })
 		} else {
-			bodyValue = JsonConverter.transformValues(bodyValue, { it instanceof DslProperty ? it.serverValue : it })
+			bodyValue = MapConverter.transformValues(bodyValue, { it instanceof DslProperty ? it.serverValue : it })
 		}
 		return bodyValue
 	}
