@@ -85,9 +85,6 @@ subprojects {
 }
 
 project(':accurest-core') {
-	configurations {
-		shade
-	}
 
 	dependencies {
 		compile 'org.slf4j:slf4j-api:[1.6.0,)'
@@ -98,42 +95,11 @@ project(':accurest-core') {
 		compile 'com.fasterxml.jackson.core:jackson-databind:2.4.5'
 		compile 'asm:asm:3.3.1'
 		compile 'com.blogspot.toomuchcoding:wiremock:0.0.1'
-		shade 'net.minidev:asm:1.0.2:sources'
-		shade 'net.minidev:json-smart:2.1.1:sources'
-		shade 'com.jayway.jsonpath:json-path:2.0.0:sources'
 		testCompile 'cglib:cglib-nodep:2.2'
 		testCompile 'org.objenesis:objenesis:2.1'
 		testCompile 'org.skyscreamer:jsonassert:1.2.3'
 	}
 
-	assemble.dependsOn('relocate')
-
-	task relocate(type:Copy) {
-		from(configurations.shade.collect { project.zipTree(it) } ){
-			exclude 'META-INF', 'META-INF/**'
-		}
-		filter { String line ->  convertLines(line, ['com.jayway.jsonpath', 'net.minidev']) }
-		into 'build/generated-sources/jarjar'
-		outputs.dir file("$buildDir/generated-sources/")
-	}
-
-	compileJava.source relocate.outputs.files, sourceSets.main.java
-
-	sourceSets {
-		main {
-			java {
-				srcDirs file("$buildDir/generated-sources")
-			}
-		}
-	}
-}
-
-private String convertLines(String line, List<String> packageNames) {
-	String packageName = packageNames.find {  line.contains(it) }
-	if (packageName && !line.contains("jarjar.$packageName")) {
-		return line.replaceAll(packageName, "jarjar.$packageName")
-	}
-	return line
 }
 
 project(':accurest-converters') {
