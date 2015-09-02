@@ -1,4 +1,5 @@
 package io.codearte.accurest.dsl
+
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.github.tomakehurst.wiremock.http.ResponseDefinition
@@ -25,30 +26,29 @@ class WireMockResponseStubStrategy extends BaseWireMockStubStrategy {
 
 	@PackageScope
 	ResponseDefinition buildClientResponseContent() {
-		ResponseDefinition responseDefinition = new ResponseDefinition()
-		responseDefinition.setStatus(response.status.clientValue as Integer)
-		appendHeaders(responseDefinition)
-		appendBody(responseDefinition)
-		return responseDefinition
+		int status = response.status.clientValue as Integer
+		HttpHeaders httpHeaders = getHttpHeaders()
+		String body = getBody()
+		return new ResponseDefinition(status, body as String, null, null, null, httpHeaders, null, null, null, null, null)
 	}
 
-	private void appendHeaders(ResponseDefinition responseDefinition) {
+	private HttpHeaders getHttpHeaders() {
 		if(!(response.headers)) {
-			return
+			return null
 		}
-		responseDefinition.setHeaders(new HttpHeaders(response.headers.entries?.collect { new HttpHeader(it.name, it.clientValue.toString()) }))
+		return new HttpHeaders(response.headers.entries?.collect { new HttpHeader(it.name, it.clientValue.toString()) })
 	}
 
-	private void appendBody(ResponseDefinition responseDefinition) {
+	private String getBody() {
 		if (!response.body) {
-			return
+			return null
 		}
 		Object body = response.body.clientValue
 		ContentType contentType = recognizeContentTypeFromHeader(response.headers)
 		if (contentType == ContentType.UNKNOWN) {
 			contentType = recognizeContentTypeFromContent(body)
 		}
-		responseDefinition.setBody(parseBody(body, contentType))
+		return parseBody(body, contentType)
 	}
 
 
