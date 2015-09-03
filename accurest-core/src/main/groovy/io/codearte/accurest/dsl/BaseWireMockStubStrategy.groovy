@@ -17,6 +17,12 @@ import static io.codearte.accurest.util.MapConverter.transformValues
 @TypeChecked
 abstract class BaseWireMockStubStrategy {
 
+	private static final Boolean STUB_SIDE = true
+
+	protected getStubSideValue(Object object) {
+		return MapConverter.getClientOrServerSideValues(object, STUB_SIDE)
+	}
+
 	private static Closure transform = {
 		it instanceof DslProperty ? transformValues(it.clientValue, transform) : it
 	}

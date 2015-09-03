@@ -4,8 +4,9 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import io.codearte.accurest.util.AssertionUtil
 import spock.lang.Issue
+import spock.lang.Specification
 
-class WireMockGroovyDslSpec extends WireMockSpec {
+class WireMockGroovyDslSpec extends Specification implements WireMockStubVerifier {
 
 	def 'should convert groovy dsl stub to wireMock stub for the client side'() {
 		given:
@@ -1189,7 +1190,6 @@ class WireMockGroovyDslSpec extends WireMockSpec {
 			stubMappingIsValidWireMockStub(wireMockStub)
 	}
 
-	@Issue("#121")
 	def 'should generate stub properly resolving GString with regular expression'() {
 		given:
 			GroovyDsl groovyDsl = GroovyDsl.make {
@@ -1243,6 +1243,50 @@ class WireMockGroovyDslSpec extends WireMockSpec {
 			}
 		  },
 		  "priority" : 1
+		}
+			'''), wireMockStub)
+		and:
+			stubMappingIsValidWireMockStub(wireMockStub)
+	}
+
+	def 'should generate stub properly resolving GString with regular expression in url'() {
+		given:
+			GroovyDsl groovyDsl = GroovyDsl.make {
+
+				request {
+					method 'PUT'
+					url "/partners/${value(client(regex('^[0-9]*$')), server('11'))}/agents/11/customers/09665703Z"
+					headers {
+						header 'Content-Type': 'application/json'
+					}
+					body(
+							first_name: 'Josef',
+					)
+				}
+				response {
+					status 422
+				}
+			}
+		when:
+			String wireMockStub = new WireMockStubStrategy(groovyDsl).toWireMockClientStub()
+		then:
+		AssertionUtil.assertThatJsonsAreEqual(('''
+		{
+		  "request" : {
+			"urlPattern" : "/partners/^[0-9]*$/agents/11/customers/09665703Z",
+			"method" : "PUT",
+			"bodyPatterns" : [ {
+			  "matchesJsonPath" : "$[?(@.first_name == 'Josef')]"
+			} ],
+			"headers" : {
+			  "Content-Type" : {
+				"equalTo" : "application/json"
+			  }
+			}
+		  },
+		  "response" : {
+			"status" : 422
+		  }
 		}
 			'''), wireMockStub)
 		and:
