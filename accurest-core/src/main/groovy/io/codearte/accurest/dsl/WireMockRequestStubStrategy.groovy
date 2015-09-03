@@ -51,7 +51,7 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		if (!request.body) {
 			return
 		}
-		ContentType contentType = tryToGetContentType()
+		ContentType contentType = tryToGetContentType(request.body.clientValue, request.headers)
 		if (contentType == ContentType.JSON) {
 			JsonPaths values = JsonToJsonPathsConverter.transformToJsonPathWithStubsSideValues(getMatchingStrategyFromBody(request.body)?.clientValue)
 			if (values.empty) {
@@ -68,17 +68,6 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		} else {
 			requestPattern.bodyPatterns = [convertToValuePattern(getMatchingStrategy(request.body.clientValue))]
 		}
-	}
-
-	private ContentType tryToGetContentType() {
-		ContentType contentType = recognizeContentTypeFromHeader(request.headers)
-		if (contentType == ContentType.UNKNOWN) {
-			if (!request.body.clientValue) {
-				return ContentType.UNKNOWN
-			}
-			return ContentUtils.getClientContentType(request.body.clientValue)
-		}
-		return contentType
 	}
 
 	private void appendHeaders(RequestPattern requestPattern) {
