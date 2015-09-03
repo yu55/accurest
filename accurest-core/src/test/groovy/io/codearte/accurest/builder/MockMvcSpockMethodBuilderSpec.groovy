@@ -464,4 +464,31 @@ class MockMvcSpockMethodBuilderSpec extends Specification {
 		then:
 			spockTest.contains('''$[?(@.message =~ /User not found by email = \\\\[[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,4}\\\\]/)]''')
 	}
+
+	def "should work properly with GString url"() {
+		given:
+			GroovyDsl contractDsl = GroovyDsl.make {
+
+				request {
+					method 'PUT'
+					url "/partners/${value(client(regex('^[0-9]*$')), server('11'))}/agents/11/customers/09665703Z"
+					headers {
+						header 'Content-Type': 'application/json'
+					}
+					body(
+							first_name: 'Josef',
+					)
+				}
+				response {
+					status 422
+				}
+			}
+			MockMvcSpockMethodBodyBuilder builder = new MockMvcSpockMethodBodyBuilder(contractDsl)
+			BlockBuilder blockBuilder = new BlockBuilder(" ")
+		when:
+			builder.appendTo(blockBuilder)
+			def spockTest = blockBuilder.toString()
+		then:
+			spockTest.contains('''/partners/11/agents/11/customers/09665703Z''')
+	}
 }
