@@ -71,8 +71,8 @@ class Common {
 	}
 
 	// TODO: This should return PatternProperty
-	Pattern regex(String regex) {
-		return Pattern.compile(regex)
+	PatternProperty regex(String regex) {
+		return new PatternProperty(regex)
 	}
 
 	OptionalProperty optional(Object object) {

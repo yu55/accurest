@@ -98,7 +98,10 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 			return
 		}
 		Object url = getUrlIfGstring(request?.url?.clientValue)
+		// FIXME: First if should be removed
 		if (url instanceof Pattern) {
+			requestPattern.setUrlPattern(url.pattern())
+		} else if (url instanceof PatternProperty) {
 			requestPattern.setUrlPattern(url.pattern())
 		} else {
 			requestPattern.setUrl(url.toString())
@@ -107,8 +110,8 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 
 	private Object getUrlIfGstring(Object clientSide) {
 		if (clientSide instanceof GString) {
-			if (clientSide.values.any { getStubSideValue(it) instanceof Pattern }) {
-				return Pattern.compile(getStubSideValue(clientSide).toString())
+			if (clientSide.values.any { getStubSideValue(it) instanceof PatternProperty }) {
+				return new PatternProperty(getStubSideValue(clientSide).toString())
 			} else {
 				return getStubSideValue(clientSide).toString()
 			}

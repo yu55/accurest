@@ -3,6 +3,7 @@ package io.codearte.accurest.util
 import groovy.transform.TypeChecked
 import io.codearte.accurest.dsl.internal.DslProperty
 import io.codearte.accurest.dsl.internal.MatchingStrategy
+import io.codearte.accurest.dsl.internal.PatternProperty
 
 import java.util.regex.Pattern
 
@@ -22,7 +23,7 @@ class ValidateUtils {
 		return value
 	}
 
-	static void validateServerValue(Pattern pattern, String msg) {
+	static void validateServerValue(PatternProperty pattern, String msg) {
 		throw new IllegalStateException("$msg can't be a pattern for the server side")
 	}
 

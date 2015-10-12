@@ -5,6 +5,7 @@ import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
 import io.codearte.accurest.dsl.GroovyDsl
 import io.codearte.accurest.dsl.internal.Header
+import io.codearte.accurest.dsl.internal.PatternProperty
 import io.codearte.accurest.dsl.internal.QueryParameter
 import io.codearte.accurest.dsl.internal.Request
 import io.codearte.accurest.dsl.internal.UrlPath
@@ -58,6 +59,10 @@ class MockMvcSpockMethodBodyBuilder extends SpockMethodBodyBuilder {
 
 	private String convertHeaderComparison(Pattern headerValue) {
 		return "==~ java.util.regex.Pattern.compile('$headerValue')"
+	}
+
+	private String convertHeaderComparison(PatternProperty headerValue) {
+		return "==~ java.util.regex.Pattern.compile('$headerValue.value')"
 	}
 
 	@Override
