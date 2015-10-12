@@ -531,7 +531,7 @@ class MockMvcSpockMethodBuilderSpec extends Specification implements WireMockStu
 						header 'Content-Type': 'application/json'
 					}
 					body(
-							email: $(client(regex(email())), server('not.existing@user.com')),
+							email: $(client(email()), server('not.existing@user.com')),
 							callback_url: $(client(regex(hostname())), server('http://partners.com'))
 					)
 				}

@@ -26,7 +26,7 @@ public class RegexpBuilders {
 	}
 
 	public static String buildGStringRegexpForStubSide(Object o) {
-		return escapeSpecialRegexChars(o.toString())
+		return o.toString()
 	}
 
 	public static String buildGStringRegexpForTestSide(GString gString) {

@@ -13,7 +13,8 @@ import java.util.regex.Pattern
 @PackageScope
 class Common {
 
-	@Delegate private final RegexPatterns regexPatterns = new RegexPatterns()
+	@Delegate
+	private final RegexPatterns regexPatterns = new RegexPatterns()
 
 	Map<String, DslProperty> convertObjectsToDslProperties(Map<String, Object> body) {
 		return body.collectEntries {
@@ -70,13 +71,21 @@ class Common {
 		return value(server, client)
 	}
 
-	// TODO: This should return PatternProperty
+
 	PatternProperty regex(String regex) {
 		return new PatternProperty(regex)
 	}
 
+	PatternProperty regex(PatternProperty patternProperty) {
+		return patternProperty
+	}
+
 	OptionalProperty optional(Object object) {
 		return new OptionalProperty(object)
+	}
+
+	OptionalProperty optional(PatternProperty patternProperty) {
+		return new OptionalProperty(patternProperty.pattern())
 	}
 
 	ExecutionProperty execute(String commandToExecute) {
@@ -99,11 +108,11 @@ class Common {
 		return new ServerDslProperty(serverValue)
 	}
 
-	void assertThatSidesMatch(Pattern pattern, String value) {
+	void assertThatSidesMatch(PatternProperty pattern, String value) {
 		assert value ==~ pattern
 	}
 
-	void assertThatSidesMatch(String value, Pattern pattern) {
+	void assertThatSidesMatch(String value, PatternProperty pattern) {
 		assert value ==~ pattern
 	}
 

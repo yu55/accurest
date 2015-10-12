@@ -231,6 +231,10 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		return containsPattern(dslProperty.clientValue)
 	}
 
+	private boolean containsPattern(PatternProperty pattern) {
+		return true
+	}
+
 	private boolean containsPattern(Pattern pattern) {
 		return true
 	}
