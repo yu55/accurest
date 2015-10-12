@@ -1,4 +1,5 @@
 package io.codearte.accurest.util
+
 import groovy.json.JsonException
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
@@ -8,7 +9,7 @@ import io.codearte.accurest.dsl.internal.DslProperty
 import io.codearte.accurest.dsl.internal.ExecutionProperty
 import io.codearte.accurest.dsl.internal.Headers
 import io.codearte.accurest.dsl.internal.MatchingStrategy
-import io.codearte.accurest.dsl.internal.OptionalProperty
+import io.codearte.accurest.dsl.internal.PatternProperty
 import org.codehaus.groovy.runtime.GStringImpl
 
 import java.util.regex.Matcher
@@ -27,9 +28,7 @@ class ContentUtils {
 
 	private static final Pattern TEMPORARY_PATTERN_HOLDER = Pattern.compile('.*REGEXP>>(.*)<<.*')
 	private static final Pattern TEMPORARY_EXECUTION_PATTERN_HOLDER = Pattern.compile('EXECUTION>>(.*)<<')
-	private static final Pattern TEMPORARY_OPTIONAL_PATTERN_HOLDER = Pattern.compile('OPTIONAL>>(.*)<<')
 	private static final String JSON_VALUE_PATTERN_FOR_REGEX = 'REGEXP>>%s<<'
-	private static final String JSON_VALUE_PATTERN_FOR_OPTIONAL = 'OPTIONAL>>%s<<'
 	private static final String JSON_VALUE_PATTERN_FOR_EXECUTION = '"EXECUTION>>%s<<"'
 
 	/**
@@ -45,7 +44,7 @@ class ContentUtils {
 	 * @return JSON structure with replaced client / server side parts
 	 */
 	public static Object extractValue(GString bodyAsValue, ContentType contentType, Closure valueProvider) {
-		if (bodyAsValue.isEmpty()){
+		if (bodyAsValue.isEmpty()) {
 			return bodyAsValue
 		}
 		if (contentType == ContentType.JSON) {
@@ -58,7 +57,7 @@ class ContentUtils {
 		try {
 			log.debug("No content type provided so trying to parse as JSON")
 			return extractValueForJSON(bodyAsValue, valueProvider)
-		} catch(JsonException e) {
+		} catch (JsonException e) {
 			// Not a JSON format
 			log.debug("Failed to parse as JSON - trying to parse as XML", e)
 			try {
@@ -74,7 +73,7 @@ class ContentUtils {
 		try {
 			extractValueForJSON(bodyAsValue, GET_STUB_SIDE)
 			return ContentType.JSON
-		} catch(JsonException e) {
+		} catch (JsonException e) {
 			try {
 				new XmlSlurper().parseText(extractValueForXML(bodyAsValue, GET_STUB_SIDE).toString())
 				return ContentType.XML
@@ -89,7 +88,7 @@ class ContentUtils {
 		try {
 			new JsonSlurper().parseText(bodyAsValue)
 			return ContentType.JSON
-		} catch(JsonException e) {
+		} catch (JsonException e) {
 			try {
 				new XmlSlurper().parseText(bodyAsValue)
 				return ContentType.XML
@@ -160,8 +159,8 @@ class ContentUtils {
 		return String.format(JSON_VALUE_PATTERN_FOR_REGEX, pattern.pattern())
 	}
 
-	private static String transformJSONStringValue(OptionalProperty optional, Closure valueProvider) {
-		return String.format(JSON_VALUE_PATTERN_FOR_OPTIONAL, optional.value)
+	private static String transformJSONStringValue(PatternProperty pattern, Closure valueProvider) {
+		return String.format(JSON_VALUE_PATTERN_FOR_REGEX, pattern.value)
 	}
 
 	private static String transformJSONStringValue(ExecutionProperty property, Closure valueProvider) {
@@ -213,16 +212,11 @@ class ContentUtils {
 	static Object returnParsedObject(String string) {
 		Matcher matcher = TEMPORARY_PATTERN_HOLDER.matcher(string.trim())
 		if (matcher.matches()) {
-			return Pattern.compile(patternFromMatchingGroup(matcher))
+			return new PatternProperty(Pattern.compile(patternFromMatchingGroup(matcher)))
 		}
 		Matcher executionMatcher = TEMPORARY_EXECUTION_PATTERN_HOLDER.matcher(string.trim())
 		if (executionMatcher.matches()) {
 			return new ExecutionProperty(patternFromMatchingGroup(executionMatcher))
-		}
-		Matcher optionalMatcher = TEMPORARY_OPTIONAL_PATTERN_HOLDER.matcher(string.trim())
-		if (optionalMatcher.matches()) {
-			String patternToMatch = patternFromMatchingGroup(optionalMatcher)
-			return Pattern.compile(new OptionalProperty(patternToMatch).optionalPattern())
 		}
 		return string
 	}
@@ -233,7 +227,7 @@ class ContentUtils {
 	}
 
 	public static ContentType recognizeContentTypeFromHeader(Headers headers) {
-		String content = headers?.entries.find { it.name == "Content-Type" } ?.clientValue?.toString()
+		String content = headers?.entries.find { it.name == "Content-Type" }?.clientValue?.toString()
 		if (content?.endsWith("json")) {
 			return ContentType.JSON
 		}

@@ -1,4 +1,5 @@
 package io.codearte.accurest.dsl
+
 import com.github.tomakehurst.wiremock.http.RequestMethod
 import com.github.tomakehurst.wiremock.matching.RequestPattern
 import com.github.tomakehurst.wiremock.matching.ValuePattern
@@ -6,16 +7,25 @@ import groovy.json.JsonOutput
 import groovy.transform.PackageScope
 import groovy.transform.TypeChecked
 import groovy.transform.TypeCheckingMode
-import io.codearte.accurest.dsl.internal.*
+import io.codearte.accurest.dsl.internal.Body
+import io.codearte.accurest.dsl.internal.DslProperty
+import io.codearte.accurest.dsl.internal.MatchingStrategy
+import io.codearte.accurest.dsl.internal.PatternProperty
+import io.codearte.accurest.dsl.internal.QueryParameters
+import io.codearte.accurest.dsl.internal.Request
 import io.codearte.accurest.util.ContentType
 import io.codearte.accurest.util.ContentUtils
-import io.codearte.accurest.util.JsonToJsonPathsConverter
 import io.codearte.accurest.util.JsonPaths
+import io.codearte.accurest.util.JsonToJsonPathsConverter
 import io.codearte.accurest.util.MapConverter
+import org.skyscreamer.jsonassert.JSONCompareMode
 
 import java.util.regex.Pattern
 
-import static io.codearte.accurest.util.ContentUtils.*
+import static io.codearte.accurest.util.ContentUtils.getEqualsTypeFromContentType
+import static io.codearte.accurest.util.ContentUtils.recognizeContentTypeFromContent
+import static io.codearte.accurest.util.ContentUtils.recognizeContentTypeFromHeader
+import static io.codearte.accurest.util.ContentUtils.recognizeContentTypeFromMatchingStrategy
 import static io.codearte.accurest.util.RegexpBuilders.buildGStringRegexpForStubSide
 import static io.codearte.accurest.util.RegexpBuilders.buildJSONRegexpMatch
 
@@ -41,7 +51,7 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 	}
 
 	private void appendMethod(RequestPattern requestPattern) {
-		if(!request.method) {
+		if (!request.method) {
 			return
 		}
 		requestPattern.setMethod(RequestMethod.fromString(request.method.clientValue?.toString()))
@@ -55,23 +65,23 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		if (contentType == ContentType.JSON) {
 			JsonPaths values = JsonToJsonPathsConverter.transformToJsonPathWithStubsSideValues(getMatchingStrategyFromBody(request.body)?.clientValue)
 			if (values.empty) {
-				requestPattern.bodyPatterns = [new ValuePattern(jsonCompareMode: org.skyscreamer.jsonassert.JSONCompareMode.LENIENT,
-						equalToJson: JsonOutput.toJson(getMatchingStrategy(request.body.clientValue).clientValue) ) ]
+				requestPattern.bodyPatterns = [new ValuePattern(jsonCompareMode: JSONCompareMode.LENIENT,
+						equalToJson: JsonOutput.toJson(getMatchingStrategy(request.body.clientValue).clientValue))]
 			} else {
 				requestPattern.bodyPatterns = values.collect { new ValuePattern(matchesJsonPath: it.jsonPath) } ?: null
 			}
 		} else if (contentType == ContentType.XML) {
 			requestPattern.bodyPatterns = [new ValuePattern(equalToXml: getMatchingStrategy(request.body.clientValue).clientValue.toString())]
 		} else if (containsPattern(request?.body)) {
-				MatchingStrategy matchingStrategy = appendBodyRegexpMatchPattern(request.body)
-				requestPattern.bodyPatterns = [convertToValuePattern(matchingStrategy)]
+			MatchingStrategy matchingStrategy = appendBodyRegexpMatchPattern(request.body)
+			requestPattern.bodyPatterns = [convertToValuePattern(matchingStrategy)]
 		} else {
 			requestPattern.bodyPatterns = [convertToValuePattern(getMatchingStrategy(request.body.clientValue))]
 		}
 	}
 
 	private void appendHeaders(RequestPattern requestPattern) {
-		if(!request.headers) {
+		if (!request.headers) {
 			return
 		}
 		request.headers.entries.each {
@@ -84,11 +94,11 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 		if (urlPath) {
 			requestPattern.setUrlPath(getStubSideValue(urlPath.toString()).toString())
 		}
-		if(!request.url) {
+		if (!request.url) {
 			return
 		}
 		Object url = getUrlIfGstring(request?.url?.clientValue)
-		if(url instanceof Pattern) {
+		if (url instanceof Pattern) {
 			requestPattern.setUrlPattern(url.pattern())
 		} else {
 			requestPattern.setUrl(url.toString())
@@ -135,7 +145,7 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 	}
 
 	private MatchingStrategy getMatchingStrategyFromBody(Body body) {
-		if(!body) {
+		if (!body) {
 			return null
 		}
 		return getMatchingStrategy(body.clientValue)
@@ -144,6 +154,7 @@ class WireMockRequestStubStrategy extends BaseWireMockStubStrategy {
 	private MatchingStrategy getMatchingStrategy(MatchingStrategy matchingStrategy) {
 		return getMatchingStrategyIncludingContentType(matchingStrategy)
 	}
+
 	private MatchingStrategy getMatchingStrategy(GString gString) {
 		if (!gString) {
 			return new MatchingStrategy("", MatchingStrategy.Type.EQUAL_TO)

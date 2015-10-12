@@ -1,8 +1,10 @@
 package io.codearte.accurest.util
-import java.util.regex.Pattern
+
 import groovy.json.JsonSlurper
 import io.codearte.accurest.dsl.internal.ExecutionProperty
-import io.codearte.accurest.dsl.internal.OptionalProperty
+import io.codearte.accurest.dsl.internal.PatternProperty
+
+import java.util.regex.Pattern
 
 /**
  * @author Marcin Grzejszczak
@@ -24,7 +26,7 @@ class JsonToJsonPathsConverter {
 	}
 
 	private static JsonPaths transformToJsonPathWithValues(def json, boolean clientSide) {
-		if(!json) {
+		if (!json) {
 			return new JsonPaths()
 		}
 		JsonPaths pathsAndValues = [] as Set
@@ -129,15 +131,15 @@ class JsonToJsonPathsConverter {
 	protected static String compareWith(Object value) {
 		if (value instanceof Pattern) {
 			return patternComparison((value as Pattern).pattern())
-		} else if (value instanceof OptionalProperty) {
-			return patternComparison((value as OptionalProperty).optionalPattern())
+		} else if (value instanceof PatternProperty) {
+			return patternComparison((value as PatternProperty).pattern())
 		} else if (value instanceof GString) {
 			return """=~ /${RegexpBuilders.buildGStringRegexpForTestSide(value)}/"""
 		}
 		return """== ${potentiallyWrappedWithQuotesValue(value)}"""
 	}
 
-	protected static String patternComparison(String pattern){
+	protected static String patternComparison(String pattern) {
 		return """=~ /$pattern/"""
 	}
 

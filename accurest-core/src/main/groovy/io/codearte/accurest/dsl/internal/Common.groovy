@@ -74,8 +74,8 @@ class Common {
 		return Pattern.compile(regex)
 	}
 
-	OptionalProperty optional(Object object) {
-		return new OptionalProperty(object)
+	PatternProperty optional(Object object) {
+		return new PatternProperty(Pattern.compile("($object)?"))
 	}
 
 	ExecutionProperty execute(String commandToExecute) {
@@ -96,10 +96,6 @@ class Common {
 
 	ServerDslProperty test(Object serverValue) {
 		return new ServerDslProperty(serverValue)
-	}
-
-	void assertThatSidesMatch(OptionalProperty stubSide, Object testSide) {
-		assert testSide ==~ Pattern.compile(stubSide.optionalPattern())
 	}
 
 	void assertThatSidesMatch(Pattern pattern, String value) {

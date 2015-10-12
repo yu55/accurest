@@ -552,7 +552,7 @@ class MockMvcSpockMethodBuilderSpec extends Specification implements WireMockStu
 			builder.appendTo(blockBuilder)
 			def spockTest = blockBuilder.toString()
 		then:
-			spockTest.contains('''$[?(@.message =~ /User not found by email = \\\\[[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,4}\\\\]/)]''')
+			spockTest.contains('''$[?(@.message =~ /User not found by email = [[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,4}]/)]''')
 	}
 
 	@Issue('42')
@@ -568,8 +568,6 @@ class MockMvcSpockMethodBuilderSpec extends Specification implements WireMockStu
 			spockTest.contains('''"email":"abc@abc.com"''')
 			spockTest.contains('''parsedJson.read(\'\'\'$[?(@.code =~ /(123123)?/)]''')
 			!spockTest.contains('''REGEXP''')
-			!spockTest.contains('''OPTIONAL''')
-			!spockTest.contains('''OptionalProperty''')
 		where:
 		contractDsl << [
 				GroovyDsl.make {

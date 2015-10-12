@@ -128,8 +128,8 @@ class Request extends Common {
 		return new MatchingStrategy(true, MatchingStrategy.Type.ABSENT)
 	}
 
-	void assertThatSidesMatch(Object stubSide, OptionalProperty testSide) {
-		throw new IllegalStateException("Optional can be used only for the stub side of the request!")
+	void assertThatSidesMatch(Object stubSide, PatternProperty testSide) {
+		throw new IllegalStateException("Pattern can be used only for the stub side of the request!")
 	}
 
 }

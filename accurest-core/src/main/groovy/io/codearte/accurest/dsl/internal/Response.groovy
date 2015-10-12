@@ -49,8 +49,8 @@ class Response extends Common {
 		this.body = new Body(bodyAsValue)
 	}
 
-	void assertThatSidesMatch(OptionalProperty stubSide, Object testSide) {
-		throw new IllegalStateException("Optional can be used only in the test side of the response!")
+	void assertThatSidesMatch(PatternProperty stubSide, Object testSide) {
+		throw new IllegalStateException("Pattern can be used only in the test side of the response!")
 	}
 }
 
