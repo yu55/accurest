@@ -70,12 +70,13 @@ class Common {
 		return value(server, client)
 	}
 
+	// TODO: This should return PatternProperty
 	Pattern regex(String regex) {
 		return Pattern.compile(regex)
 	}
 
-	PatternProperty optional(Object object) {
-		return new PatternProperty(Pattern.compile("($object)?"))
+	OptionalProperty optional(Object object) {
+		return new OptionalProperty(object)
 	}
 
 	ExecutionProperty execute(String commandToExecute) {
