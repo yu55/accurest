@@ -57,12 +57,9 @@ class MockMvcSpockMethodBodyBuilder extends SpockMethodBodyBuilder {
 		return " == '$headerValue'"
 	}
 
-	private String convertHeaderComparison(Pattern headerValue) {
-		return "==~ java.util.regex.Pattern.compile('$headerValue')"
-	}
-
 	private String convertHeaderComparison(PatternProperty headerValue) {
-		return "==~ java.util.regex.Pattern.compile('$headerValue.value')"
+		String pattern = headerValue.toString().replace('/', '\\/')
+		return "==~ /$pattern/"
 	}
 
 	@Override

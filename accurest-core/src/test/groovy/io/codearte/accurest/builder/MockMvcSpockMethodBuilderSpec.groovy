@@ -414,7 +414,7 @@ class MockMvcSpockMethodBuilderSpec extends Specification implements WireMockStu
 			builder.appendTo(blockBuilder)
 			def spockTest = blockBuilder.toString()
 		then:
-			spockTest.contains('''response.header('Location') ==~ java.util.regex.Pattern.compile('http://localhost/partners/[0-9]+/users/[0-9]+')''')
+			spockTest.contains('''response.header('Location') ==~ /http:\\/\\/localhost\\/partners\\/[0-9]+\\/users\\/[0-9]+/''')
 		and:
 			stubMappingIsValidWireMockStub(new WireMockStubStrategy(contractDsl).toWireMockClientStub())
 	}
@@ -449,7 +449,7 @@ class MockMvcSpockMethodBuilderSpec extends Specification implements WireMockStu
 			builder.appendTo(blockBuilder)
 			def spockTest = blockBuilder.toString()
 		then:
-			spockTest.contains('''response.header('Location') ==~ java.util.regex.Pattern.compile('^((http[s]?|ftp):\\/)\\/?([^:\\/\\s]+)(:[0-9]{1,5})?/partners/[0-9]+/users/[0-9]+')''')
+			spockTest.contains('''response.header('Location') ==~ /^((http[s]?|ftp):\\\\/)\\\\/?([^:\\\\/\\s]+)(:[0-9]{1,5})?\\/partners\\/[0-9]+\\/users\\/[0-9]+/''')
 		and:
 			stubMappingIsValidWireMockStub(new WireMockStubStrategy(contractDsl).toWireMockClientStub())
 	}
