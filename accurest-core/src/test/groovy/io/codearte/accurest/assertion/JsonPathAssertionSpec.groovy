@@ -1,10 +1,9 @@
 package io.codearte.accurest.assertion
 
 import groovy.json.JsonSlurper
-import org.junit.Ignore
 import spock.lang.Specification
 
-import static io.codearte.accurest.assertion.JsonPathAssertion.assertThat
+import static JsonPathAssertionEntry.assertThat
 /**
  * @author Marcin Grzejszczak
  */
@@ -13,9 +12,9 @@ public class JsonPathAssertionSpec extends Specification {
 	def 'should work'() {
 		expect:
 			assertThat('body').field('foo').isEqualTo('bar')
+			assertThat('body').field('foo').array('nested').contains('withlist').isEqualTo('bar')
 	}
 
-	@Ignore
 	def 'should convert a json with a map as root to a map of path to value'() {
 		given:
 		String json = '''
@@ -32,14 +31,45 @@ public class JsonPathAssertionSpec extends Specification {
 						}
 '''
 		when:
-		JsonPathsAssertions pathAndValues = JsonToJsonPathsAssertionsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+			JsonPathsAssertions pathAndValues = JsonToJsonPathsAssertionsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-		pathAndValues['''$.some.nested[?(@.json == 'with value')]'''] == 'with value'
+		pathAndValues.find {
+			it.methodsBuffer.toString() == '''.field('some').field('nested').field('anothervalue').isEqualTo(4)'''
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested[?(@.anothervalue == 4)]'''
+		}
+		pathAndValues.find {
+			it.methodsBuffer.toString() == '''.field('some').field('nested').array('withlist').contains('name').isEqualTo('name1')'''
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested.withlist[*][?(@.name == 'name1')]'''
+		}
+		pathAndValues.find {
+			it.methodsBuffer.toString() == '''.field('some').field('nested').array('withlist').contains('name').isEqualTo('name2')'''
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested.withlist[*][?(@.name == 'name2')]'''
+		}
+		pathAndValues.find {
+			it.methodsBuffer.toString() == '''.field('some').field('nested').isEqualTo('with value')'''
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested[?(@.json == 'with value')]'''
+		}
+
+
+		/*
+
+				pathAndValues['''$.some.nested[?(@.json == 'with value')]'''] == 'with value'
 		pathAndValues['''assertThat('body').field('some')..array('nested').contains('anothervalue').isEqualTo(4)''']
 		pathAndValues['''$.some.nested[?(@.anothervalue == 4)]'''] == 4
 		pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
 		pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
 
+
+
+		 */
 	}
 
 }
