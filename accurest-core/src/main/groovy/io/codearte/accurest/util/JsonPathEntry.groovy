@@ -29,6 +29,10 @@ class JsonPathEntry {
 		return asserter
 	}
 
+	void matchesJsonPath(String jsonPath) {
+		assert !parsedJson.read(jsonPath, JSONArray).empty
+	}
+
 	FieldAssertion field(Object value) {
 		Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
 		asserter.field(value);
