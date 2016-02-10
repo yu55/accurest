@@ -5,6 +5,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.codearte.accurest.dsl.internal.ExecutionProperty
 import io.codearte.accurest.dsl.internal.OptionalProperty
+import io.codearte.accurest.util.JsonPathEntry.Asserter
 
 import java.util.regex.Pattern
 /**
@@ -30,7 +31,7 @@ class JsonToJsonPathsConverter {
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = MapConverter.getClientOrServerSideValues(json, clientSide)
 		JsonPathEntry rootEntry = new JsonPathEntry(JsonPath.parse(JsonOutput.toJson(convertedJson)))
-		traverseRecursivelyForKey(convertedJson, rootEntry.root()) { JsonPathEntry.Asserter key, Object value ->
+		traverseRecursivelyForKey(convertedJson, rootEntry.root()) { Asserter key, Object value ->
 			if (value instanceof ExecutionProperty) {
 				return
 			}
@@ -39,7 +40,7 @@ class JsonToJsonPathsConverter {
 		return pathsAndValues
 	}
 
-	protected static def traverseRecursively(Class parentType, JsonPathEntry.Asserter key, def value, Closure closure) {
+	protected static def traverseRecursively(Class parentType, Asserter key, def value, Closure closure) {
 		if (value instanceof String && value) {
 			try {
 				def json = new JsonSlurper().parseText(value)
@@ -47,7 +48,7 @@ class JsonToJsonPathsConverter {
 					return convertWithKey(parentType, key, json, closure)
 				}
 			} catch (Exception ignore) {
-				return closure(key, value)
+				return runClosure(closure, key, value)
 			}
 		} else if (isAnEntryWithNonCollectionLikeValue(value)) {
 			return convertWithKey(List, key, value as Map, closure)
@@ -56,18 +57,27 @@ class JsonToJsonPathsConverter {
 		} else if (value instanceof Map) {
 			return convertWithKey(Map, key, value as Map, closure)
 		} else if (value instanceof List) {
-			JsonPathEntry.Asserter asserter = key instanceof JsonPathEntry.RootFieldAssertion ?
+			Asserter asserter = key instanceof JsonPathEntry.RootFieldAssertion ?
 					((JsonPathEntry.RootFieldAssertion) key).array() : key
 			value.each { def element ->
-				traverseRecursively(List, asserter, element, closure)
+				traverseRecursively(List, asserter instanceof JsonPathEntry.ArrayValueAssertion ?
+						((JsonPathEntry.ArrayValueAssertion) asserter).contains(element) : asserter
+						, element, closure)
 			}
 			return value
 		}
 		try {
-			return closure(key, value)
+			return runClosure(closure, key, value)
 		} catch (Exception ignore) {
 			return value
 		}
+	}
+
+	private static def runClosure(Closure closure, Asserter key, def value) {
+		if (key instanceof JsonPathEntry.ArrayValueAssertion) {
+			return closure(valueToAsserter(key, value), value)
+		}
+		return closure(key, value)
 	}
 
 	private static boolean isAnEntryWithNonCollectionLikeValue(def value) {
@@ -89,30 +99,34 @@ class JsonToJsonPathsConverter {
 		}
 		Map valueAsMap = ((Map) value)
 		return valueAsMap.entrySet().every { Map.Entry entry ->
-			[String, Number].any { entry.value.getClass().isAssignableFrom(it) }
+			[String, Number, Boolean].any { entry.value.getClass().isAssignableFrom(it) }
 		}
 	}
 
-	private static Map convertWithKey(Class parentType, JsonPathEntry.Asserter parentKey, Map map, Closure closureToExecute) {
+	private static boolean listContainsOnlyPrimitives(List list) {
+		return list.every { def element ->
+			[String, Number, Boolean].any { element.getClass().isAssignableFrom(it) }
+		}
+	}
+
+	private static Map convertWithKey(Class parentType, Asserter parentKey, Map map, Closure closureToExecute) {
 		return map.collectEntries {
 			Object entrykey, value ->
 				[entrykey, traverseRecursively(parentType,
-							value instanceof List ? parentKey.array(entrykey.toString()) :
+							value instanceof List ? listContainsOnlyPrimitives(value) ?
+									parentKey.arrayField(entrykey.toString()) :
+									parentKey.array(entrykey.toString()) :
 							value instanceof Map ? parentKey.field(entrykey.toString()) :
-									getValueToInsert(parentKey.fieldBeforeMatching(entrykey.toString()), value)
+									valueToAsserter(parentKey.fieldBeforeMatching(entrykey.toString()), value)
 							, value, closureToExecute)]
 		}
 	}
 
-	private static void traverseRecursivelyForKey(def json, JsonPathEntry.Asserter rootKey, Closure closure) {
+	private static void traverseRecursivelyForKey(def json, Asserter rootKey, Closure closure) {
 		traverseRecursively(Map, rootKey, json, closure)
 	}
 
-	private static JsonPathEntry.Asserter getValueToInsert(JsonPathEntry.Asserter key, Object value) {
-		return convertToListElementFiltering(key, value)
-	}
-
-	protected static JsonPathEntry.Asserter convertToListElementFiltering(JsonPathEntry.Asserter key, Object value) {
+	protected static Asserter valueToAsserter(Asserter key, Object value) {
 		if (value instanceof Pattern) {
 			return key.matches((value as Pattern).pattern())
 		} else if (value instanceof OptionalProperty) {

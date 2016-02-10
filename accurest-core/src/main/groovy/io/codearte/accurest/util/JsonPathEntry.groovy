@@ -83,6 +83,55 @@ class JsonPathEntry {
 
 	}
 
+	protected class ArrayValueAssertion extends FieldAssertion {
+		protected ArrayValueAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer,
+									  StringBuffer methodsBuffer, String arrayName) {
+			super(parsedJson, jsonPathBuffer, methodsBuffer, arrayName)
+		}
+
+		@Override
+		ArrayValueAssertion contains(Object value) {
+			Asserter asserter = new ArrayValueAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.methodsBuffer.append(".contains(${wrapValue(value)})")
+			return asserter
+		}
+
+		Asserter value(String value) {
+			jsonPathBuffer.append("""[?(@ == '$value')]""")
+			methodsBuffer.append(".value()")
+			return this
+		}
+
+		@Override
+		Asserter isEqualTo(String value) {
+			jsonPathBuffer.append("""[?(@ == '$value')]""")
+			methodsBuffer.append(".value()")
+			return this
+		}
+
+		@Override
+		Asserter isEqualTo(Number value) {
+			jsonPathBuffer.append("""[?(@ == $value)]""")
+			methodsBuffer.append(".value()")
+			return this
+		}
+
+		@Override
+		Asserter matches(String value) {
+			jsonPathBuffer.append("""[?(@ =~ /$value/)]""")
+			methodsBuffer.append(".value()")
+			return this
+		}
+
+		@Override
+		Asserter isEqualTo(Boolean value) {
+			jsonPathBuffer.append("""[?(@ == $value)]""")
+			methodsBuffer.append(".value()")
+			return this
+		}
+
+	}
+
 	@EqualsAndHashCode(includeFields = true)
 	class Asserter {
 		protected final DocumentContext parsedJson
@@ -97,10 +146,14 @@ class JsonPathEntry {
 			this.fieldName = fieldName
 		}
 
-		FieldAssertion contains(String value) {
+		FieldAssertion contains(Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
-			asserter.methodsBuffer.append(".contains('$value')")
+			asserter.methodsBuffer.append(".contains(${wrapValue(value)})")
 			return asserter
+		}
+
+		protected String wrapValue(Object value) {
+			return value instanceof String ? "'$value'" : value
 		}
 
 		FieldAssertion field(String value) {
@@ -119,6 +172,13 @@ class JsonPathEntry {
 		ArrayAssertion array(String value) {
 			Asserter asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
 			asserter.jsonPathBuffer.append(".$value[*]")
+			asserter.methodsBuffer.append(".array('$value')")
+			return asserter
+		}
+
+		protected ArrayValueAssertion arrayField(String value) {
+			Asserter asserter = new ArrayValueAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.jsonPathBuffer.append(".$value")
 			asserter.methodsBuffer.append(".array('$value')")
 			return asserter
 		}

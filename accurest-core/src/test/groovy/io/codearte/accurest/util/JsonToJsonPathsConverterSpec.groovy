@@ -121,10 +121,30 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['''$.some.nested[?(@.json == 'with value')]'''] == 'with value'
-			pathAndValues['''$.some.nested[?(@.anothervalue == 4)]'''] == 4
-			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
-			pathAndValues['''$.some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
+		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field('some').field('nested').field('json').isEqualTo('''with value''')"""
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested[?(@.json == 'with value')]'''
+		}
+		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field('some').field('nested').field('anothervalue').isEqualTo(4)"""
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested[?(@.anothervalue == 4)]'''
+		}
+		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested.withlist[*][?(@.name == 'name1')]'''
+		}
+		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field('some').field('nested').array('withlist').contains('name').isEqualTo('''name2''')"""
+		}
+		pathAndValues.find {
+			it.jsonPathBuffer.toString() == '''$.some.nested.withlist[*][?(@.name == 'name2')]'''
+		}
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		}
@@ -139,7 +159,12 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['''$.items[?(@ == 'HOP')]'''] == 'HOP'
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array('items').contains('HOP').value()"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.items[?(@ == 'HOP')]'''
+			}
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		}
