@@ -18,11 +18,36 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['''$[*].some.nested[?(@.json == 'with value')]'''] == 'with value'
-			pathAndValues['''$[*].some.nested[?(@.anothervalue == 4)]'''] == 4
-			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
-			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''] == 'name2'
-			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name == 'name3')]'''] == 'name3'
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('json').isEqualTo('''with value''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.json == 'with value')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('anothervalue').isEqualTo(4)"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.anothervalue == 4)]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name2''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*].anothernested[?(@.name == 'name3')]'''
+			}
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		where:
@@ -222,8 +247,7 @@ class JsonToJsonPathsConverterSpec extends Specification {
 	private void assertThatJsonPathsInMapAreValid(String json, JsonPaths pathAndValues) {
 		DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST).build()).parse(json);
 		pathAndValues.each {
-			def at = parsedJson.read(it.jsonPath, JSONArray).getAt(it.optionalSuffix ?: 0)
-			assert at == it.optionalSuffix ? [it.value] : it.value
+			assert !parsedJson.read(it.jsonPath(), JSONArray).empty
 		}
 	}
 

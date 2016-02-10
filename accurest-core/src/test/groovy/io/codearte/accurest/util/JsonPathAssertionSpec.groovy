@@ -1,9 +1,10 @@
-package io.codearte.accurest.assertion
+package io.codearte.accurest.util
 
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static JsonPathAssertionEntry.assertThat
+import static io.codearte.accurest.util.JsonPathEntry.assertThat
+
 /**
  * @author Marcin Grzejszczak
  */
@@ -31,7 +32,7 @@ public class JsonPathAssertionSpec extends Specification {
 						}
 '''
 		when:
-			JsonPathsAssertions pathAndValues = JsonToJsonPathsAssertionsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
 				it.methodsBuffer.toString() == """.field('some').field('nested').field('anothervalue').isEqualTo(4)"""
