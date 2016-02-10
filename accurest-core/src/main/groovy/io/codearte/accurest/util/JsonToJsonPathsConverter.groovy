@@ -5,7 +5,7 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.codearte.accurest.dsl.internal.ExecutionProperty
 import io.codearte.accurest.dsl.internal.OptionalProperty
-import io.codearte.accurest.util.JsonPathEntry.Asserter
+import io.codearte.accurest.util.JsonPathAssertion.Asserter
 
 import java.util.regex.Pattern
 /**
@@ -30,7 +30,7 @@ class JsonToJsonPathsConverter {
 		}
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = MapConverter.getClientOrServerSideValues(json, clientSide)
-		JsonPathEntry rootEntry = new JsonPathEntry(JsonPath.parse(JsonOutput.toJson(convertedJson)))
+		JsonPathAssertion rootEntry = new JsonPathAssertion(JsonPath.parse(JsonOutput.toJson(convertedJson)))
 		traverseRecursivelyForKey(convertedJson, rootEntry.root()) { Asserter key, Object value ->
 			if (value instanceof ExecutionProperty) {
 				return
@@ -57,11 +57,11 @@ class JsonToJsonPathsConverter {
 		} else if (value instanceof Map) {
 			return convertWithKey(Map, key, value as Map, closure)
 		} else if (value instanceof List) {
-			Asserter asserter = key instanceof JsonPathEntry.RootFieldAssertion ?
-					((JsonPathEntry.RootFieldAssertion) key).array() : key
+			Asserter asserter = key instanceof JsonPathAssertion.RootFieldAssertion ?
+					((JsonPathAssertion.RootFieldAssertion) key).array() : key
 			value.each { def element ->
-				traverseRecursively(List, asserter instanceof JsonPathEntry.ArrayValueAssertion ?
-						((JsonPathEntry.ArrayValueAssertion) asserter).contains(element) : asserter
+				traverseRecursively(List, asserter instanceof JsonPathAssertion.ArrayValueAssertion ?
+						((JsonPathAssertion.ArrayValueAssertion) asserter).contains(element) : asserter
 						, element, closure)
 			}
 			return value
@@ -74,7 +74,7 @@ class JsonToJsonPathsConverter {
 	}
 
 	private static def runClosure(Closure closure, Asserter key, def value) {
-		if (key instanceof JsonPathEntry.ArrayValueAssertion) {
+		if (key instanceof JsonPathAssertion.ArrayValueAssertion) {
 			return closure(valueToAsserter(key, value), value)
 		}
 		return closure(key, value)

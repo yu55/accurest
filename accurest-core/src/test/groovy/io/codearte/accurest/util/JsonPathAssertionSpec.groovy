@@ -3,7 +3,7 @@ package io.codearte.accurest.util
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static io.codearte.accurest.util.JsonPathEntry.assertThat
+import static JsonPathAssertion.assertThat
 
 /**
  * @author Marcin Grzejszczak
