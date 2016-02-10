@@ -3,6 +3,7 @@ package io.codearte.accurest.assertion
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
 import net.minidev.json.JSONArray
 
 /**
@@ -25,34 +26,28 @@ class JsonPathAssertionEntry {
 	}
 
 	FieldAssertion root() {
-		jsonPathBuffer.append('$')
-		return new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer,  '')
+		Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer,  '')
+		asserter.jsonPathBuffer.append('$')
+		return asserter
 	}
 
 	FieldAssertion field(String value) {
-		jsonPathBuffer.append(".$value")
-		methodsBuffer.append(".field('$value')")
-		return new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+		Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+		asserter.jsonPathBuffer.append(".$value")
+		asserter.methodsBuffer.append(".field('$value')")
+		return asserter
 	}
 
 	ArrayAssertion array(String value) {
-		jsonPathBuffer.append(".$value[*]")
-		methodsBuffer.append(".array('$value')")
-		return new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+		Asserter asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+		asserter.jsonPathBuffer.append(".$value[*]")
+		asserter.methodsBuffer.append(".array('$value')")
+		return asserter
 	}
 
 	class FieldAssertion extends Asserter {
 
 		protected FieldAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, String fieldName) {
-			super(parsedJson, jsonPathBuffer, methodsBuffer, fieldName)
-		}
-
-
-	}
-
-	class ArrayFieldAssertion extends Asserter {
-
-		protected ArrayFieldAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, String fieldName) {
 			super(parsedJson, jsonPathBuffer, methodsBuffer, fieldName)
 		}
 
@@ -64,11 +59,28 @@ class JsonPathAssertionEntry {
 			super(parsedJson, jsonPathBuffer, methodsBuffer, arrayName)
 		}
 
+		@Override
+		FieldAssertion field(String value) {
+			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.jsonPathBuffer.append(".$value")
+			asserter.methodsBuffer.append(".contains('$value')")
+			return asserter
+		}
+
+		@Override
+		FieldAssertion fieldBeforeMatching(String value) {
+			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.methodsBuffer.append(".contains('$value')")
+			return asserter
+		}
+
 	}
 
 	/**
 	 * TODO: Should be trait or mixin - don't remember which one we support
 	 */
+	@ToString(includePackage = false)
+	@EqualsAndHashCode
 	class Asserter {
 		protected final DocumentContext parsedJson
 		final StringBuffer jsonPathBuffer
@@ -82,30 +94,35 @@ class JsonPathAssertionEntry {
 			this.fieldName = fieldName
 		}
 
-		ArrayFieldAssertion contains(String value) {
-			methodsBuffer.append(".contains('$value')")
-			return new ArrayFieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+		FieldAssertion contains(String value) {
+			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.methodsBuffer.append(".contains('$value')")
+			return asserter
 		}
 
 		FieldAssertion field(String value) {
-			jsonPathBuffer.append(".$value")
-			methodsBuffer.append(".field('$value')")
-			return new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.jsonPathBuffer.append(".$value")
+			asserter.methodsBuffer.append(".field('$value')")
+			return asserter
 		}
 
 		FieldAssertion fieldBeforeMatching(String value) {
-			methodsBuffer.append(".field('$value')")
-			return new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.methodsBuffer.append(".field('$value')")
+			return asserter
 		}
 
 		ArrayAssertion array(String value) {
-			methodsBuffer.append(".array('$value')")
-			return new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			Asserter asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
+			asserter.jsonPathBuffer.append(".$value[*]")
+			asserter.methodsBuffer.append(".array('$value')")
+			return asserter
 		}
 
 		Asserter isEqualTo(String value) {
 			jsonPathBuffer.append("""[?(@.$fieldName == '$value')]""")
-			methodsBuffer.append(".isEqualTo('$value')")
+			methodsBuffer.append(".isEqualTo('''$value''')")
 			return this
 		}
 
@@ -121,7 +138,7 @@ class JsonPathAssertionEntry {
 
 		Asserter matches(String value) {
 			jsonPathBuffer.append("""[?(@.$fieldName =~ /$value/)]""")
-			methodsBuffer.append(".matches('$value')")
+			methodsBuffer.append(".matches('''$value''')")
 			return this
 		}
 
@@ -132,7 +149,7 @@ class JsonPathAssertionEntry {
 		}
 
 		void check() {
-			!parsedJson.read(jsonPathBuffer.toString(), JSONArray).empty
+			assert !parsedJson.read(jsonPathBuffer.toString(), JSONArray).empty
 		}
 
 	}

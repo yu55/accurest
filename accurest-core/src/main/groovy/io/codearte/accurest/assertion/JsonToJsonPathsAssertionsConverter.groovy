@@ -9,6 +9,7 @@ import io.codearte.accurest.util.MapConverter
 import io.codearte.accurest.util.RegexpBuilders
 
 import java.util.regex.Pattern
+
 /**
  * @author Marcin Grzejszczak
  */
@@ -16,8 +17,6 @@ class JsonToJsonPathsAssertionsConverter {
 
 	private static final Boolean SERVER_SIDE = false
 	private static final Boolean CLIENT_SIDE = true
-
-	public static final String ALL_ELEMENTS = "[*]"
 
 	public static JsonPathsAssertions transformToJsonPathWithTestsSideValues(def json) {
 		return transformToJsonPathWithValues(json, SERVER_SIDE)
