@@ -180,8 +180,18 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['''$[?(@.property1 == null)]'''] == null
-			pathAndValues['''$[?(@.property2 == true)]'''] == true
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().contains('property1').isNull()"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[?(@.property1 == null)]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field('property2').isEqualTo(true)"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[?(@.property1 == null)]'''
+			}
 	}
 
 	def "should convert numbers map"() {
@@ -193,9 +203,24 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['''$.extensions[?(@.7 == 28)]'''] == 28.0
-			pathAndValues['''$.extensions[?(@.14 == 41)]'''] == 41.0
-			pathAndValues['''$.extensions[?(@.30 == 60)]'''] == 60.0
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field('extensions').field('7').isEqualTo(28)"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.extensions[?(@.7 == 28)]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field('extensions').field('14').isEqualTo(41)"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.extensions[?(@.14 == 41)]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field('extensions').field('30').isEqualTo(60)"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.extensions[?(@.30 == 60)]'''
+			}
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 	}
@@ -213,10 +238,24 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
-			pathAndValues['''$.errors[*][?(@.property == 'email')]'''] == 'email'
-			pathAndValues['''$.errors[*][?(@.message == 'inconsistent value')]'''] == 'inconsistent value'
-			pathAndValues['''$.errors[*][?(@.message == 'inconsistent value2')]'''] == 'inconsistent value2'
-			pathAndValues['''$.errors[*][?(@.property == 'email')]'''] == 'email'
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array('errors').contains('property').isEqualTo('''email''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.errors[*][?(@.property == 'email')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array('errors').contains('message').isEqualTo('''inconsistent value''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.errors[*][?(@.message == 'inconsistent value')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array('errors').contains('message').isEqualTo('''inconsistent value2''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$.errors[*][?(@.message == 'inconsistent value2')]'''
+			}
 		and:
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		}
@@ -257,13 +296,37 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		when:
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
-			pathAndValues['''$[*].some.nested[?(@.json == 'with value')]'''] == 'with value'
-			pathAndValues['''$[*].some.nested[?(@.anothervalue == 4)]'''] == 4
-			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''] == 'name1'
-			pathAndValues['''$[*].some.nested.withlist[*][?(@.name == 'name2')]''']
-			(pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] as Pattern).pattern() == '[a-zA-Z]+'
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('json').isEqualTo('''with value''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.json == 'with value')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('anothervalue').isEqualTo(4)"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.anothervalue == 4)]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name2''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').field('anothernested').field('name').matches('''[a-zA-Z]+''')"""
+			}
+			pathAndValues.find {
+				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''
+			}
 		when:
-			pathAndValues['''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''] = "Kowalski"
 			json.some.nested.withlist[0][2].anothernested.name = "Kowalski"
 		then:
 			assertThatJsonPathsInMapAreValid(JsonOutput.prettyPrint(JsonOutput.toJson(json)), pathAndValues)

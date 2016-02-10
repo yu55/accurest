@@ -114,10 +114,10 @@ class JsonToJsonPathsConverter {
 			Object entrykey, value ->
 				[entrykey, traverseRecursively(parentType,
 							value instanceof List ? listContainsOnlyPrimitives(value) ?
-									parentKey.arrayField(entrykey.toString()) :
-									parentKey.array(entrykey.toString()) :
-							value instanceof Map ? parentKey.field(entrykey.toString()) :
-									valueToAsserter(parentKey.fieldBeforeMatching(entrykey.toString()), value)
+									parentKey.arrayField(entrykey) :
+									parentKey.array(entrykey) :
+							value instanceof Map ? parentKey.field(entrykey) :
+									valueToAsserter(parentKey.fieldBeforeMatching(entrykey), value)
 							, value, closureToExecute)]
 		}
 	}

@@ -29,7 +29,7 @@ class JsonPathEntry {
 		return asserter
 	}
 
-	FieldAssertion field(String value) {
+	FieldAssertion field(Object value) {
 		Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
 		asserter.field(value);
 		return asserter
@@ -75,9 +75,9 @@ class JsonPathEntry {
 		}
 
 		@Override
-		FieldAssertion fieldBeforeMatching(String value) {
+		FieldAssertion fieldBeforeMatching(Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
-			asserter.methodsBuffer.append(".contains('$value')")
+			asserter.methodsBuffer.append(".contains(${wrapValue(value)})")
 			return asserter
 		}
 
@@ -156,56 +156,77 @@ class JsonPathEntry {
 			return value instanceof String ? "'$value'" : value
 		}
 
-		FieldAssertion field(String value) {
+		FieldAssertion field(Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
 			asserter.jsonPathBuffer.append(".$value")
-			asserter.methodsBuffer.append(".field('$value')")
+			asserter.methodsBuffer.append(".field(${wrapValue(value)})")
 			return asserter
 		}
 
-		protected FieldAssertion fieldBeforeMatching(String value) {
+		protected FieldAssertion fieldBeforeMatching(Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
-			asserter.methodsBuffer.append(".field('$value')")
+			asserter.methodsBuffer.append(".field(${wrapValue(value)})")
 			return asserter
 		}
 
-		ArrayAssertion array(String value) {
+		ArrayAssertion array(Object value) {
 			Asserter asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
 			asserter.jsonPathBuffer.append(".$value[*]")
-			asserter.methodsBuffer.append(".array('$value')")
+			asserter.methodsBuffer.append(".array(${wrapValue(value)})")
 			return asserter
 		}
 
-		protected ArrayValueAssertion arrayField(String value) {
+		protected ArrayValueAssertion arrayField(Object value) {
 			Asserter asserter = new ArrayValueAssertion(parsedJson, jsonPathBuffer, methodsBuffer, value)
 			asserter.jsonPathBuffer.append(".$value")
-			asserter.methodsBuffer.append(".array('$value')")
+			asserter.methodsBuffer.append(".array(${wrapValue(value)})")
 			return asserter
 		}
 
 		Asserter isEqualTo(String value) {
+			if (value == null) {
+				return isNull()
+			}
 			jsonPathBuffer.append("""[?(@.$fieldName == '$value')]""")
 			methodsBuffer.append(".isEqualTo('''$value''')")
 			return this
 		}
 
 		Asserter isEqualTo(Object value) {
+			if (value == null) {
+				return isNull()
+			}
 			return isEqualTo(value as String)
 		}
 
 		Asserter isEqualTo(Number value) {
+			if (value == null) {
+				return isNull()
+			}
 			jsonPathBuffer.append("""[?(@.$fieldName == $value)]""")
 			methodsBuffer.append(".isEqualTo($value)")
 			return this
 		}
 
+		Asserter isNull() {
+			jsonPathBuffer.append("""[?(@.$fieldName == null)]""")
+			methodsBuffer.append(".isNull()")
+			return this
+		}
+
 		Asserter matches(String value) {
+			if (value == null) {
+				return isNull()
+			}
 			jsonPathBuffer.append("""[?(@.$fieldName =~ /$value/)]""")
 			methodsBuffer.append(".matches('''$value''')")
 			return this
 		}
 
 		Asserter isEqualTo(Boolean value) {
+			if (value == null) {
+				return isNull()
+			}
 			jsonPathBuffer.append("""[?(@.$fieldName == $value)]""")
 			methodsBuffer.append(".isEqualTo($value)")
 			return this
