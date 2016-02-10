@@ -48,7 +48,7 @@ class JsonPathEntry {
 
 	protected class RootFieldAssertion extends FieldAssertion {
 		protected RootFieldAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer,
-								 StringBuffer methodsBuffer, String fieldName) {
+								 StringBuffer methodsBuffer, Object fieldName) {
 			super(parsedJson, jsonPathBuffer, methodsBuffer, fieldName)
 		}
 
@@ -62,14 +62,14 @@ class JsonPathEntry {
 
 	protected class FieldAssertion extends Asserter {
 		protected FieldAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer,
-								 StringBuffer methodsBuffer, String fieldName) {
+								 StringBuffer methodsBuffer, Object fieldName) {
 			super(parsedJson, jsonPathBuffer, methodsBuffer, fieldName)
 		}
 	}
 
 	protected class ArrayAssertion extends Asserter {
 		protected ArrayAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer,
-								 StringBuffer methodsBuffer, String arrayName) {
+								 StringBuffer methodsBuffer, Object arrayName) {
 			super(parsedJson, jsonPathBuffer, methodsBuffer, arrayName)
 		}
 
@@ -141,9 +141,9 @@ class JsonPathEntry {
 		protected final DocumentContext parsedJson
 		protected final StringBuffer jsonPathBuffer
 		protected final StringBuffer methodsBuffer
-		protected final String fieldName
+		protected final Object fieldName
 
-		protected Asserter(DocumentContext parsedJson, StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, String fieldName) {
+		protected Asserter(DocumentContext parsedJson, StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, Object fieldName) {
 			this.parsedJson = parsedJson
 			this.jsonPathBuffer = new StringBuffer(jsonPathBuffer.toString())
 			this.methodsBuffer = new StringBuffer(methodsBuffer.toString())

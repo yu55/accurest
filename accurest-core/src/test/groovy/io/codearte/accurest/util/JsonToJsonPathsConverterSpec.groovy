@@ -181,7 +181,7 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().contains('property1').isNull()"""
+				it.methodsBuffer.toString() == """.field('property1').isNull()"""
 			}
 			pathAndValues.find {
 				it.jsonPathBuffer.toString() == '''$[?(@.property1 == null)]'''
