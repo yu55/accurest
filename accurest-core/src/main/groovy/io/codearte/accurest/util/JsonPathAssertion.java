@@ -47,6 +47,16 @@ public class JsonPathAssertion {
 		return ((ArrayAssertion) (asserter));
 	}
 
+	private static String stringWithEscapedQuotes(Object object) {
+		String stringValue = object.toString();
+		return stringValue.replaceAll("\"", "\\\\\"");
+	}
+
+	private static String stringWithEscapedSingleQuotes(Object object) {
+		String stringValue = object.toString();
+		return stringValue.replaceAll("'", "\\\\'");
+	}
+
 	protected class RootFieldAssertion extends FieldAssertion {
 		protected RootFieldAssertion(DocumentContext parsedJson,
 				StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, Object fieldName) {
@@ -85,7 +95,7 @@ public class JsonPathAssertion {
 		public FieldAssertion fieldBeforeMatching(final Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer,
 					methodsBuffer, value);
-			asserter.methodsBuffer.append(".contains(").append(wrapValue(value))
+			asserter.methodsBuffer.append(".contains(").append(wrapValueWithQuotes(value))
 					.append(")");
 			return ((FieldAssertion) (asserter));
 		}
@@ -102,20 +112,20 @@ public class JsonPathAssertion {
 		public ArrayValueAssertion contains(final Object value) {
 			Asserter asserter = new ArrayValueAssertion(parsedJson, jsonPathBuffer,
 					methodsBuffer, value);
-			asserter.methodsBuffer.append(".contains(").append(wrapValue(value))
+			asserter.methodsBuffer.append(".contains(").append(wrapValueWithQuotes(value))
 					.append(")");
 			return ((ArrayValueAssertion) (asserter));
 		}
 
 		public Asserter value(String value) {
-			jsonPathBuffer.append("[?(@ == \'").append(value).append("\')]");
+			jsonPathBuffer.append("[?(@ =='").append(value).append("')]");
 			methodsBuffer.append(".value()");
 			return this;
 		}
 
 		@Override
 		public Asserter isEqualTo(String value) {
-			jsonPathBuffer.append("[?(@ == \'").append(value).append("\')]");
+			jsonPathBuffer.append("[?(@ == ").append(wrapValueWithSingleQuotes(value)).append(")]");
 			methodsBuffer.append(".value()");
 			return this;
 		}
@@ -144,6 +154,12 @@ public class JsonPathAssertion {
 	}
 
 	public class Asserter {
+
+		protected final DocumentContext parsedJson;
+		protected final StringBuffer jsonPathBuffer;
+		protected final StringBuffer methodsBuffer;
+		protected final Object fieldName;
+
 		protected Asserter(DocumentContext parsedJson,
 				StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, Object fieldName) {
 			this.parsedJson = parsedJson;
@@ -155,27 +171,33 @@ public class JsonPathAssertion {
 		public FieldAssertion contains(final Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer,
 					methodsBuffer, value);
-			asserter.methodsBuffer.append(".contains(").append(wrapValue(value))
+			asserter.methodsBuffer.append(".contains(").append(wrapValueWithQuotes(value))
 					.append(")");
 			return ((FieldAssertion) (asserter));
 		}
 
-		public String wrapValue(Object value) {
-			return value instanceof String ? "\'" + value + "\'" : value.toString();
+		public String wrapValueWithQuotes(Object value) {
+			return value instanceof String ? "\"" + stringWithEscapedQuotes(value) + "\"" :
+					value.toString();
+		}
+
+		public String wrapValueWithSingleQuotes(Object value) {
+			return value instanceof String ? "'" + stringWithEscapedSingleQuotes(value) + "'" :
+					value.toString();
 		}
 
 		public FieldAssertion field(final Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer,
 					methodsBuffer, value);
 			asserter.jsonPathBuffer.append(".").append(String.valueOf(value));
-			asserter.methodsBuffer.append(".field(").append(wrapValue(value)).append(")");
+			asserter.methodsBuffer.append(".field(").append(wrapValueWithQuotes(value)).append(")");
 			return ((FieldAssertion) (asserter));
 		}
 
 		public FieldAssertion fieldBeforeMatching(final Object value) {
 			Asserter asserter = new FieldAssertion(parsedJson, jsonPathBuffer,
 					methodsBuffer, value);
-			asserter.methodsBuffer.append(".field(").append(wrapValue(value)).append(")");
+			asserter.methodsBuffer.append(".field(").append(wrapValueWithQuotes(value)).append(")");
 			return ((FieldAssertion) (asserter));
 		}
 
@@ -184,7 +206,7 @@ public class JsonPathAssertion {
 					methodsBuffer, value);
 			asserter.jsonPathBuffer.append(".").append(String.valueOf(value))
 					.append("[*]");
-			asserter.methodsBuffer.append(".array(").append(wrapValue(value)).append(")");
+			asserter.methodsBuffer.append(".array(").append(wrapValueWithQuotes(value)).append(")");
 			return ((ArrayAssertion) (asserter));
 		}
 
@@ -192,7 +214,7 @@ public class JsonPathAssertion {
 			Asserter asserter = new ArrayValueAssertion(parsedJson, jsonPathBuffer,
 					methodsBuffer, value);
 			asserter.jsonPathBuffer.append(".").append(String.valueOf(value));
-			asserter.methodsBuffer.append(".array(").append(wrapValue(value)).append(")");
+			asserter.methodsBuffer.append(".array(").append(wrapValueWithQuotes(value)).append(")");
 			return ((ArrayValueAssertion) (asserter));
 		}
 
@@ -201,8 +223,8 @@ public class JsonPathAssertion {
 				return isNull();
 			}
 			jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-					.append(" == \'").append(value).append("\')]");
-			methodsBuffer.append(".isEqualTo(\'\'\'").append(value).append("\'\'\')");
+					.append(" == ").append(wrapValueWithSingleQuotes(value)).append(")]");
+			methodsBuffer.append(".isEqualTo(").append(wrapValueWithQuotes(value)).append(")");
 			return this;
 		}
 
@@ -218,7 +240,7 @@ public class JsonPathAssertion {
 				return isNull();
 			}
 			jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-					.append(" == ").append(String.valueOf(value)).append(")]");
+					.append(" == ").append(value).append(")]");
 			methodsBuffer.append(".isEqualTo(").append(String.valueOf(value)).append(")");
 			return this;
 		}
@@ -235,8 +257,8 @@ public class JsonPathAssertion {
 				return isNull();
 			}
 			jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-					.append(" =~ /").append(value).append("/)]");
-			methodsBuffer.append(".matches(\'\'\'").append(value).append("\'\'\')");
+					.append(" =~ /").append(stringWithEscapedSingleQuotes(value)).append("/)]");
+			methodsBuffer.append(".matches(").append(wrapValueWithQuotes(value)).append(")");
 			return this;
 		}
 
@@ -251,7 +273,7 @@ public class JsonPathAssertion {
 		}
 
 		public String methodWithAppendedCheck() {
-			return methodsBuffer.append(".check()").toString();
+			return methodsBuffer.append(".check();").toString();
 		}
 
 		public String jsonPath() {
@@ -294,10 +316,5 @@ public class JsonPathAssertion {
 					+ "jsonPathBuffer=" + String.valueOf(jsonPathBuffer) + ",\n   "
 					+ " methodsBuffer=" + String.valueOf(methodsBuffer) + "\n}";
 		}
-
-		protected final DocumentContext parsedJson;
-		protected final StringBuffer jsonPathBuffer;
-		protected final StringBuffer methodsBuffer;
-		protected final Object fieldName;
 	}
 }
