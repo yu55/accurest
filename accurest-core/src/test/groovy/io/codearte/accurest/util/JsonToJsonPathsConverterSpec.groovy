@@ -19,33 +19,23 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('json').isEqualTo('''with value''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").field("json").isEqualTo("with value")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.json == 'with value')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('anothervalue').isEqualTo(4)"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").field("anothervalue").isEqualTo(4)""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.anothervalue == 4)]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").array("withlist").contains("name").isEqualTo("name1")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name2''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").array("withlist").contains("name").isEqualTo("name2")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").array("withlist").field("anothernested").field("name").isEqualTo("name3")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*].anothernested[?(@.name == 'name3')]'''
 			}
 		and:
@@ -122,27 +112,19 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field('some').field('nested').field('json').isEqualTo('''with value''')"""
-		}
-		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field("some").field("nested").field("json").isEqualTo("with value")""" &&
 			it.jsonPathBuffer.toString() == '''$.some.nested[?(@.json == 'with value')]'''
 		}
 		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field('some').field('nested').field('anothervalue').isEqualTo(4)"""
-		}
-		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field("some").field("nested").field("anothervalue").isEqualTo(4)""" &&
 			it.jsonPathBuffer.toString() == '''$.some.nested[?(@.anothervalue == 4)]'''
 		}
 		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
-		}
-		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field("some").field("nested").array("withlist").contains("name").isEqualTo("name1")""" &&
 			it.jsonPathBuffer.toString() == '''$.some.nested.withlist[*][?(@.name == 'name1')]'''
 		}
 		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field('some').field('nested').array('withlist').contains('name').isEqualTo('''name2''')"""
-		}
-		pathAndValues.find {
+			it.methodsBuffer.toString() == """.field("some").field("nested").array("withlist").contains("name").isEqualTo("name2")""" &&
 			it.jsonPathBuffer.toString() == '''$.some.nested.withlist[*][?(@.name == 'name2')]'''
 		}
 		and:
@@ -160,9 +142,7 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array('items').contains('HOP').value()"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array("items").contains("HOP").value()""" &&
 				it.jsonPathBuffer.toString() == '''$.items[?(@ == 'HOP')]'''
 			}
 		and:
@@ -181,16 +161,12 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.field('property1').isNull()"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field("property1").isNull()""" &&
 				it.jsonPathBuffer.toString() == '''$[?(@.property1 == null)]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.field('property2').isEqualTo(true)"""
-			}
-			pathAndValues.find {
-				it.jsonPathBuffer.toString() == '''$[?(@.property1 == null)]'''
+				it.methodsBuffer.toString() == """.field("property2").isEqualTo(true)""" &&
+				it.jsonPathBuffer.toString() == '''$[?(@.property2 == true)]'''
 			}
 	}
 
@@ -204,21 +180,15 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.field('extensions').field('7').isEqualTo(28)"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field("extensions").field("7").isEqualTo(28)""" &&
 				it.jsonPathBuffer.toString() == '''$.extensions[?(@.7 == 28)]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.field('extensions').field('14').isEqualTo(41)"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field("extensions").field("14").isEqualTo(41)""" &&
 				it.jsonPathBuffer.toString() == '''$.extensions[?(@.14 == 41)]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.field('extensions').field('30').isEqualTo(60)"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field("extensions").field("30").isEqualTo(60)""" &&
 				it.jsonPathBuffer.toString() == '''$.extensions[?(@.30 == 60)]'''
 			}
 		and:
@@ -239,21 +209,15 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array('errors').contains('property').isEqualTo('''email''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array("errors").contains("property").isEqualTo("email")""" &&
 				it.jsonPathBuffer.toString() == '''$.errors[*][?(@.property == 'email')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array('errors').contains('message').isEqualTo('''inconsistent value''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array("errors").contains("message").isEqualTo("inconsistent value")""" &&
 				it.jsonPathBuffer.toString() == '''$.errors[*][?(@.message == 'inconsistent value')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array('errors').contains('message').isEqualTo('''inconsistent value2''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array("errors").contains("message").isEqualTo("inconsistent value2")""" &&
 				it.jsonPathBuffer.toString() == '''$.errors[*][?(@.message == 'inconsistent value2')]'''
 			}
 		and:
@@ -273,7 +237,7 @@ class JsonToJsonPathsConverterSpec extends Specification {
 													 [name: "name2"],
 													 [name: "name1"],
 													 [anothernested:
-															  [name: Pattern.compile('[a-zA-Z]+')]
+															  [name: Pattern.compile("[a-zA-Z]+")]
 													 ],
 													 [age: "123456789"]
 											 ]
@@ -297,33 +261,23 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('json').isEqualTo('''with value''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").field("json").isEqualTo("with value")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.json == 'with value')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').field('anothervalue').isEqualTo(4)"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").field("anothervalue").isEqualTo(4)""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested[?(@.anothervalue == 4)]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name1''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").array("withlist").contains("name").isEqualTo("name1")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').contains('name').isEqualTo('''name2''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").array("withlist").contains("name").isEqualTo("name2")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''
 			}
 			pathAndValues.find {
-				it.methodsBuffer.toString() == """.array().field('some').field('nested').array('withlist').field('anothernested').field('name').matches('''[a-zA-Z]+''')"""
-			}
-			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("some").field("nested").array("withlist").field("anothernested").field("name").matches("[a-zA-Z]+")""" &&
 				it.jsonPathBuffer.toString() == '''$[*].some.nested.withlist[*].anothernested[?(@.name =~ /[a-zA-Z]+/)]'''
 			}
 		when:
