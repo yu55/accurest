@@ -1,9 +1,14 @@
 package com.blogspot.toomuchcoding.jsonpathassert;
 
-interface ReadyToCheck {
+public interface ReadyToCheck {
 	/**
 	 * True if the whole JSON Path got built
 	 */
 	boolean isReadyToCheck();
+
+	/**
+	 * Perform the assertion of the object against JSON Path
+	 */
+	void check();
 }
 

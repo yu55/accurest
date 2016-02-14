@@ -11,7 +11,6 @@ import net.minidev.json.JSONArray;
 public class JsonPathAssertion {
 	private final DocumentContext parsedJson;
 	private final StringBuffer jsonPathBuffer = new StringBuffer();
-	private final StringBuffer methodsBuffer = new StringBuffer();
 
 	private JsonPathAssertion(DocumentContext parsedJson) {
 		this.parsedJson = parsedJson;
@@ -22,14 +21,13 @@ public class JsonPathAssertion {
 		return new JsonPathAssertion(parsedJson);
 	}
 
-	public static JsonPathAsserter root(String body) {
+	public static JsonPathVerifiable root(String body) {
 		JsonPathAssertion jsonPathAssertion = assertThat(body);
 		return jsonPathAssertion.root();
 	}
 
-	protected JsonPathAsserter root() {
-		NamelessArrayHavingFieldAssertion asserter = new NamelessArrayHavingFieldAssertion(parsedJson, jsonPathBuffer,
-				methodsBuffer, "");
+	protected JsonPathVerifiable root() {
+		NamelessArrayHavingFieldAssertion asserter = new NamelessArrayHavingFieldAssertion(parsedJson, jsonPathBuffer, "");
 		asserter.jsonPathBuffer.append("$");
 		return asserter;
 	}
@@ -38,17 +36,16 @@ public class JsonPathAssertion {
 		assert !parsedJson.read(jsonPath, JSONArray.class).isEmpty();
 	}
 
-	public JsonPathAsserter field(Object value) {
-		FieldAssertion asserter = new FieldAssertion(parsedJson, jsonPathBuffer, methodsBuffer,
+	public JsonPathVerifiable field(Object value) {
+		FieldAssertion asserter = new FieldAssertion(parsedJson, jsonPathBuffer,
 				value);
 		asserter.field(value);
 		return asserter;
 	}
 
-	public JsonPathAsserter array() {
-		ArrayAssertion asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, methodsBuffer);
+	public JsonPathVerifiable array() {
+		ArrayAssertion asserter = new ArrayAssertion(parsedJson, jsonPathBuffer);
 		asserter.jsonPathBuffer.append("[*]");
-		asserter.methodsBuffer.append(".array()");
 		return asserter;
 	}
 

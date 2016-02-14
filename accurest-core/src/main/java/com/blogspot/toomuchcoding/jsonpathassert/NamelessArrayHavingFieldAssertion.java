@@ -4,8 +4,8 @@ import com.jayway.jsonpath.DocumentContext;
 
 class NamelessArrayHavingFieldAssertion extends FieldAssertion {
 	protected NamelessArrayHavingFieldAssertion(DocumentContext parsedJson,
-			StringBuffer jsonPathBuffer, StringBuffer methodsBuffer, Object fieldName) {
-		super(parsedJson, jsonPathBuffer, methodsBuffer, fieldName);
+			StringBuffer jsonPathBuffer, Object fieldName) {
+		super(parsedJson, jsonPathBuffer, fieldName);
 	}
 
 	@Override

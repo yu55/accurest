@@ -285,6 +285,310 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		then:
 			assertThatJsonPathsInMapAreValid(JsonOutput.prettyPrint(JsonOutput.toJson(json)), pathAndValues)
 		}
+	
+
+	def "should generate assertions for simple response body"() {
+		given:
+		String json =  """{
+		"property1": "a",
+		"property2": "b"
+	}"""
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property1").isEqualTo("a")""" &&
+			it.jsonPath() == """\$[?(@.property1 == 'a')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.field("property2").isEqualTo("b")""" &&
+			it.jsonPath() == """\$[?(@.property2 == 'b')]"""
+		}
+		and:
+		pathAndValues.size() == 2
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate assertions for null and boolean values"() {
+		given:
+		String json =  """{
+		"property1": "true",
+		"property2": null,
+		"property3": false
+	}"""
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property1").isEqualTo("true")""" &&
+			it.jsonPath() == """\$[?(@.property1 == 'true')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.field("property2").isNull()""" &&
+			it.jsonPath() == """\$[?(@.property2 == null)]"""
+		}
+		pathAndValues.find {
+			it.method()== """.field("property3").isEqualTo(false)""" &&
+			it.jsonPath() == """\$[?(@.property3 == false)]"""
+		}
+		and:
+		pathAndValues.size() == 3
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate assertions for simple response body constructed from map with a list"() {
+		given:
+		Map json =  [
+				property1: 'a',
+				property2: [
+						[a: 'sth'],
+						[b: 'sthElse']
+				]
+		]
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property1").isEqualTo("a")""" &&
+			it.jsonPath() == """\$[?(@.property1 == 'a')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array("property2").contains("a").isEqualTo("sth")""" &&
+			it.jsonPath() == """\$.property2[*][?(@.a == 'sth')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array("property2").contains("b").isEqualTo("sthElse")""" &&
+			it.jsonPath() == """\$.property2[*][?(@.b == 'sthElse')]"""
+		}
+		and:
+		pathAndValues.size() == 3
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate assertions for a response body containing map with integers as keys"() {
+		given:
+		Map json =  [
+				property: [
+						14: 0.0,
+						7 : 0.0
+				]
+		]
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property").field(7).isEqualTo(0.0)""" &&
+			it.jsonPath() == """\$.property[?(@.7 == 0.0)]"""
+		}
+		pathAndValues.find {
+			it.method()== """.field("property").field(14).isEqualTo(0.0)""" &&
+			it.jsonPath() == """\$.property[?(@.14 == 0.0)]"""
+		}
+		and:
+		pathAndValues.size() == 2
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate assertions for array in response body"() {
+		given:
+		String json =  """[
+	{
+		"property1": "a"
+	},
+	{
+		"property2": "b"
+	}]"""
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+		pathAndValues.find {
+			it.method()== """.array().contains("property1").isEqualTo("a")""" &&
+			it.jsonPath() == """\$[*][?(@.property1 == 'a')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array().contains("property2").isEqualTo("b")""" &&
+			it.jsonPath() == """\$[*][?(@.property2 == 'b')]"""
+		}
+		and:
+		pathAndValues.size() == 2
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate assertions for array inside response body element"() {
+		given:
+		String json =  """{
+	"property1": [
+	{ "property2": "test1"},
+	{ "property3": "test2"}
+	]
+}"""
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+		pathAndValues.find {
+			it.method()== """.array("property1").contains("property2").isEqualTo("test1")""" &&
+			it.jsonPath() == """\$.property1[*][?(@.property2 == 'test1')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array("property1").contains("property3").isEqualTo("test2")""" &&
+			it.jsonPath() == """\$.property1[*][?(@.property3 == 'test2')]"""
+		}
+		and:
+		pathAndValues.size() == 2
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate assertions for nested objects in response body"() {
+		given:
+		String json =  """{
+		"property1": "a",
+		"property2": {"property3": "b"}
+	}"""
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property2").field("property3").isEqualTo("b")""" &&
+			it.jsonPath() == """\$.property2[?(@.property3 == 'b')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.field("property1").isEqualTo("a")""" &&
+			it.jsonPath() == """\$[?(@.property1 == 'a')]"""
+		}
+		and:
+		pathAndValues.size() == 2
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should generate regex assertions for map objects in response body"() {
+		given:
+		Map json =  [
+				property1: "a",
+				property2: Pattern.compile('[0-9]{3}')
+		]
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property2").matches("[0-9]{3}")""" &&
+			it.jsonPath() == """\$[?(@.property2 =~ /[0-9]{3}/)]"""
+		}
+		pathAndValues.find {
+			it.method()== """.field("property1").isEqualTo("a")""" &&
+			it.jsonPath() == """\$[?(@.property1 == 'a')]"""
+		}
+		and:
+		pathAndValues.size() == 2
+	}
+
+	def "should generate escaped regex assertions for string objects in response body"() {
+		given:
+		Map json =  [
+				property2: Pattern.compile('\\d+')
+		]
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+		then:
+		pathAndValues.find {
+			it.method()== """.field("property2").matches("\\d+")""" &&
+			it.jsonPath() == """\$[?(@.property2 =~ /\\d+/)]"""
+		}
+		and:
+		pathAndValues.size() == 1
+	}
+
+
+	def "should work with more complex stuff and jsonpaths"() {
+		given:
+		Map json =  [
+				errors: [
+						[property: "bank_account_number",
+						 message: "incorrect_format"]
+				]
+		]
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+		then:
+		pathAndValues.find {
+			it.method()== """.array("errors").contains("property").isEqualTo("bank_account_number")""" &&
+			it.jsonPath() == """\$.errors[*][?(@.property == 'bank_account_number')]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array("errors").contains("message").isEqualTo("incorrect_format")""" &&
+			it.jsonPath() == """\$.errors[*][?(@.message == 'incorrect_format')]"""
+		}
+		and:
+		pathAndValues.size() == 2
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
+
+	def "should manage to parse a double array"() {
+		given:
+		String json = '''
+						[{
+							"place":
+							{
+								"bounding_box":
+								{
+									"coordinates":
+										[[
+											[-77.119759,38.995548],
+											[-76.909393,38.791645]
+										]]
+								}
+							}
+						}]
+					'''
+		when:
+		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+		pathAndValues.find {
+			it.method()== """.array().field("place").field("bounding_box").array("coordinates").array().contains(38.995548).value()""" &&
+			it.jsonPath() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == 38.995548)]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array().field("place").field("bounding_box").array("coordinates").array().contains(-77.119759).value()""" &&
+			it.jsonPath() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == -77.119759)]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array().field("place").field("bounding_box").array("coordinates").array().contains(-76.909393).value()""" &&
+			it.jsonPath() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == -76.909393)]"""
+		}
+		pathAndValues.find {
+			it.method()== """.array().field("place").field("bounding_box").array("coordinates").array().contains(38.791645).value()""" &&
+			it.jsonPath() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == 38.791645)]"""
+		}
+		and:
+		pathAndValues.size() == 4
+		and:
+		pathAndValues.each {
+			it.check()
+		}
+	}
 
 	private void assertThatJsonPathsInMapAreValid(String json, JsonPaths pathAndValues) {
 		DocumentContext parsedJson = JsonPath.using(Configuration.builder().options(Option.ALWAYS_RETURN_LIST).build()).parse(json);
