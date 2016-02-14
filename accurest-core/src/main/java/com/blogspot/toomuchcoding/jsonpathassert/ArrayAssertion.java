@@ -13,8 +13,7 @@ class ArrayAssertion extends JsonPathAsserter {
 
 	@Override
 	public FieldAssertion fieldBeforeMatching(final Object value) {
-		FieldAssertion asserter = new FieldAssertion(parsedJson, jsonPathBuffer, value);
-		return asserter;
+		return new FieldAssertion(parsedJson, jsonPathBuffer, value);
 	}
 
 	@Override

@@ -37,6 +37,9 @@ class DelegatingJsonPathVerifiable implements MethodBufferingJsonPathVerifiable 
 		DelegatingJsonPathVerifiable verifiable = new DelegatingJsonPathVerifiable(delegate.contains(value), methodsBuffer);
 		verifiable.methodsBuffer.append(".contains(").append(wrapValueWithQuotes(value))
 				.append(")");
+		if (isAssertingAValueInArray()) {
+			verifiable.methodsBuffer.append(".value()");
+		}
 		return verifiable;
 	}
 
@@ -78,13 +81,13 @@ class DelegatingJsonPathVerifiable implements MethodBufferingJsonPathVerifiable 
 	}
 
 	@Override
-	public MethodBufferingJsonPathVerifiable namelessArrayField(Object value) {
-		return new DelegatingJsonPathVerifiable(delegate.namelessArrayField(value), methodsBuffer);
+	public MethodBufferingJsonPathVerifiable arrayField() {
+		return new DelegatingJsonPathVerifiable(delegate.arrayField(), methodsBuffer);
 	}
 
 	@Override
-	public MethodBufferingJsonPathVerifiable namelessArray() {
-		DelegatingJsonPathVerifiable verifiable = new DelegatingJsonPathVerifiable(delegate.namelessArray(), methodsBuffer);
+	public MethodBufferingJsonPathVerifiable array() {
+		DelegatingJsonPathVerifiable verifiable = new DelegatingJsonPathVerifiable(delegate.array(), methodsBuffer);
 		verifiable.methodsBuffer.append(".array()");
 		return verifiable;
 	}
@@ -155,6 +158,11 @@ class DelegatingJsonPathVerifiable implements MethodBufferingJsonPathVerifiable 
 					.append(")");
 		}
 		return readyToCheck;
+	}
+
+	@Override
+	public MethodBufferingJsonPathVerifiable value() {
+		return new DelegatingJsonPathVerifiable(delegate, methodsBuffer);
 	}
 
 	@Override

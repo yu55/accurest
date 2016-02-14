@@ -37,12 +37,12 @@ public interface JsonPathVerifiable extends ReadyToCheck, IteratingOverArray {
 	/**
 	 * When you want to compare values of a field in a nameless array
 	 */
-	JsonPathVerifiable namelessArrayField(Object value);
+	JsonPathVerifiable arrayField();
 
 	/**
 	 * When in JSON path you iterate over a nameless array
 	 */
-	JsonPathVerifiable namelessArray();
+	JsonPathVerifiable array();
 
 	/**
 	 * When in JSON path you iterate over arrays and need to skip iteration
@@ -81,6 +81,11 @@ public interface JsonPathVerifiable extends ReadyToCheck, IteratingOverArray {
 	 * Equality comparison with a Boolean
 	 */
 	JsonPathVerifiable isEqualTo(Boolean value);
+
+	/**
+	 * Call this to to perform assertion against an array of primitives
+	 */
+	JsonPathVerifiable value();
 
 	/**
 	 * Returns current JSON Path expression

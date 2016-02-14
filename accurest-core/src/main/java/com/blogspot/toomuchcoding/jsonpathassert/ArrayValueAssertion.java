@@ -7,13 +7,17 @@ class ArrayValueAssertion extends FieldAssertion {
 		super(parsedJson, jsonPathBuffer, arrayName);
 	}
 
-	@Override
-	public ArrayValueAssertion contains(Object value) {
-		return new ArrayValueAssertion(parsedJson, jsonPathBuffer, value);
+	protected ArrayValueAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer) {
+		super(parsedJson, jsonPathBuffer, null);
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(String value) {
+	public JsonPathVerifiable contains(Object value) {
+		return new ArrayValueAssertion(parsedJson, jsonPathBuffer, value).isEqualTo(value);
+	}
+
+	@Override
+	public JsonPathVerifiable isEqualTo(String value) {
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
 		readyToCheck.jsonPathBuffer.append("[?(@ == ")
@@ -22,7 +26,7 @@ class ArrayValueAssertion extends FieldAssertion {
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(Number value) {
+	public JsonPathVerifiable isEqualTo(Number value) {
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
 		readyToCheck.jsonPathBuffer.append("[?(@ == ").append(String.valueOf(value))
@@ -31,7 +35,7 @@ class ArrayValueAssertion extends FieldAssertion {
 	}
 
 	@Override
-	public ReadyToCheckAsserter matches(String value) {
+	public JsonPathVerifiable matches(String value) {
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
 		readyToCheck.jsonPathBuffer.append("[?(@ =~ /").append(value).append("/)]");
@@ -39,7 +43,7 @@ class ArrayValueAssertion extends FieldAssertion {
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(Boolean value) {
+	public JsonPathVerifiable isEqualTo(Boolean value) {
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
 		readyToCheck.jsonPathBuffer.append("[?(@ == ").append(String.valueOf(value))

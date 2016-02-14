@@ -17,7 +17,7 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public FieldAssertion contains(final Object value) {
+	public JsonPathVerifiable contains(final Object value) {
 		return new FieldAssertion(parsedJson, jsonPathBuffer, value);
 	}
 
@@ -35,6 +35,9 @@ class JsonPathAsserter implements JsonPathVerifiable {
 
 	@Override
 	public ArrayAssertion array(final Object value) {
+		if (value == null) {
+			return array();
+		}
 		ArrayAssertion asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, value);
 		asserter.jsonPathBuffer.append(".").append(String.valueOf(value)).append("[*]");
 		return asserter;
@@ -48,12 +51,12 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public ArrayValueAssertion namelessArrayField(final Object value) {
-		return new ArrayValueAssertion(parsedJson, jsonPathBuffer, value);
+	public ArrayValueAssertion arrayField() {
+		return new ArrayValueAssertion(parsedJson, jsonPathBuffer);
 	}
 
 	@Override
-	public ArrayAssertion namelessArray() {
+	public ArrayAssertion array() {
 		ArrayAssertion asserter = new ArrayAssertion(parsedJson, jsonPathBuffer);
 		asserter.jsonPathBuffer.append("[*]");
 		return asserter;
@@ -65,7 +68,7 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(String value) {
+	public JsonPathVerifiable isEqualTo(String value) {
 		if (value == null) {
 			return isNull();
 		}
@@ -77,15 +80,20 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(Object value) {
+	public JsonPathVerifiable isEqualTo(Object value) {
 		if (value == null) {
 			return isNull();
+		}
+		if (value instanceof Number) {
+			return isEqualTo((Number) value);
+		} else if (value instanceof Boolean) {
+			return isEqualTo((Boolean) value);
 		}
 		return isEqualTo(value.toString());
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(Number value) {
+	public JsonPathVerifiable isEqualTo(Number value) {
 		if (value == null) {
 			return isNull();
 		}
@@ -97,7 +105,7 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public ReadyToCheckAsserter isNull() {
+	public JsonPathVerifiable isNull() {
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
 		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
@@ -106,7 +114,7 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public ReadyToCheckAsserter matches(String value) {
+	public JsonPathVerifiable matches(String value) {
 		if (value == null) {
 			return isNull();
 		}
@@ -119,7 +127,7 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	}
 
 	@Override
-	public ReadyToCheckAsserter isEqualTo(Boolean value) {
+	public JsonPathVerifiable isEqualTo(Boolean value) {
 		if (value == null) {
 			return isNull();
 		}
@@ -128,6 +136,12 @@ class JsonPathAsserter implements JsonPathVerifiable {
 		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
 				.append(" == ").append(String.valueOf(value)).append(")]");
 		return readyToCheck;
+	}
+
+	@Override
+	public JsonPathVerifiable value() {
+		return new ReadyToCheckAsserter(parsedJson,
+				jsonPathBuffer, fieldName);
 	}
 
 	@Override

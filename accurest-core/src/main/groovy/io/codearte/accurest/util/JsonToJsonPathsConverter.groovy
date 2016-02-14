@@ -30,7 +30,7 @@ class JsonToJsonPathsConverter {
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = MapConverter.getClientOrServerSideValues(json, clientSide)
 		MethodBufferingJsonPathVerifiable methodBufferingJsonPathVerifiable =
-				new DelegatingJsonPathVerifiable(JsonPathAssertion.root(JsonOutput.toJson(convertedJson)))
+				new DelegatingJsonPathVerifiable(JsonPathAssertion.assertThat(JsonOutput.toJson(convertedJson)))
 		traverseRecursivelyForKey(convertedJson, methodBufferingJsonPathVerifiable)
 				 { MethodBufferingJsonPathVerifiable key, Object value ->
 			if (value instanceof ExecutionProperty || !key.isReadyToCheck()) {
@@ -65,7 +65,7 @@ class JsonToJsonPathsConverter {
 			}
 			return value
 		} else if (key.isIteratingOverArray()) {
-			traverseRecursively(Object, key.namelessArrayField(value).contains(value), value, closure)
+			traverseRecursively(Object, key.arrayField().contains(value), value, closure)
 		}
 		try {
 			return runClosure(closure, key, value)
@@ -76,10 +76,10 @@ class JsonToJsonPathsConverter {
 
 	private static MethodBufferingJsonPathVerifiable createAsserterFromList(MethodBufferingJsonPathVerifiable key, List value) {
 		if (key.isIteratingOverNamelessArray()) {
-			return key.namelessArray()
+			return key.array()
 		} else if (key.isIteratingOverArray() && isAnEntryWithLists(value)) {
 			if (!value.every { listContainsOnlyPrimitives(it as List)} ) {
-				return key.namelessArray()
+				return key.array()
 			} else {
 				return key.iterationPassingArray()
 			}

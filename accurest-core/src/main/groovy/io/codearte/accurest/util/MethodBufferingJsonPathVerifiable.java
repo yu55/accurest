@@ -22,10 +22,10 @@ public interface MethodBufferingJsonPathVerifiable extends JsonPathVerifiable, M
 	MethodBufferingJsonPathVerifiable arrayField(Object value);
 
 	@Override
-	MethodBufferingJsonPathVerifiable namelessArrayField(Object value);
+	MethodBufferingJsonPathVerifiable arrayField();
 
 	@Override
-	MethodBufferingJsonPathVerifiable namelessArray();
+	MethodBufferingJsonPathVerifiable array();
 
 	@Override
 	MethodBufferingJsonPathVerifiable iterationPassingArray();
@@ -47,4 +47,7 @@ public interface MethodBufferingJsonPathVerifiable extends JsonPathVerifiable, M
 
 	@Override
 	MethodBufferingJsonPathVerifiable isEqualTo(Boolean value);
+
+	@Override
+	MethodBufferingJsonPathVerifiable value();
 }
