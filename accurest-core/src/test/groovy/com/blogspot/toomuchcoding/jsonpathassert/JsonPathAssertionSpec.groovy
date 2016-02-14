@@ -1,13 +1,13 @@
 package com.blogspot.toomuchcoding.jsonpathassert
 
-import groovy.json.JsonSlurper
-import io.codearte.accurest.util.JsonPaths
-import io.codearte.accurest.util.JsonToJsonPathsConverter
+import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.regex.Pattern
 
 import static com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion.assertThat
+import static groovy.json.JsonOutput.toJson
 /**
  * @author Marcin Grzejszczak
  */
@@ -19,261 +19,170 @@ public class JsonPathAssertionSpec extends Specification {
 		assertThat('body').field('foo').array('nested').contains('withlist').isEqualTo('bar')
 	}
 
-	def 'should convert a json with a map as root to a map of path to value'() {
-		given:
-		String json = '''
-					 {
-							"some" : {
-								"nested" : {
-									"json" : "with \\"val'ue",
-									"anothervalue": 4,
-									"withlist" : [
-										{ "name" :"name1"} , {"name": "name2"}
-									]
+	@Shared String json1 = '''
+						 {
+								"some" : {
+									"nested" : {
+										"json" : "with \\"val'ue",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}
+										]
+									}
 								}
 							}
-						}
-'''
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("some").field("nested").field("anothervalue").isEqualTo(4)""" &&
-					it.jsonPathBuffer.toString() == """\$.some.nested[?(@.anothervalue == 4)]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("some").field("nested").array("withlist").contains("name").isEqualTo("name1")""" &&
-					it.jsonPathBuffer.toString() == """\$.some.nested.withlist[*][?(@.name == 'name1')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("some").field("nested").array("withlist").contains("name").isEqualTo("name2")""" &&
-					it.jsonPathBuffer.toString() == """\$.some.nested.withlist[*][?(@.name == 'name2')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("some").field("nested").field("json").isEqualTo("with \\"val'ue")""" &&
-					it.jsonPathBuffer.toString() == """\$.some.nested[?(@.json == 'with "val\\'ue')]"""
-		}
-		and:
-		pathAndValues.size() == 4
-		and:
-		pathAndValues.each {
-			it.check()
-		}
+	'''
+
+	@Unroll
+	def 'should convert a json with a map as root to a map of path to value '() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                                                           || expectedJsonPath
+			assertThat(json1).field("some").field("nested").field("anothervalue").isEqualTo(4)                    || '''$.some.nested[?(@.anothervalue == 4)]'''
+			assertThat(json1).field("some").field("nested").array("withlist").contains("name").isEqualTo("name1") || '''$.some.nested.withlist[*][?(@.name == 'name1')]'''
+			assertThat(json1).field("some").field("nested").array("withlist").contains("name").isEqualTo("name2") || '''$.some.nested.withlist[*][?(@.name == 'name2')]'''
+			assertThat(json1).field("some").field("nested").field("json").isEqualTo("with \"val'ue")              || '''$.some.nested[?(@.json == 'with "val\\'ue')]'''
 	}
 
+	@Shared String json2 =  '''{
+			"property1": "a",
+			"property2": "b"
+		}'''
+
+	@Unroll
 	def "should generate assertions for simple response body"() {
-		given:
-		String json =  """{
-		"property1": "a",
-		"property2": "b"
-	}"""
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property1").isEqualTo("a")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'a')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property2").isEqualTo("b")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property2 == 'b')]"""
-		}
-		and:
-		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                         || expectedJsonPath
+			assertThat(json2).field("property1").isEqualTo("a") || '''$[?(@.property1 == 'a')]'''
+			assertThat(json2).field("property2").isEqualTo("b") || '''$[?(@.property2 == 'b')]'''
 	}
 
-	def "should generate assertions for null and boolean values"() {
-		given:
-		String json =  """{
+	@Shared String json3 =  '''{
 		"property1": "true",
 		"property2": null,
 		"property3": false
-	}"""
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property1").isEqualTo("true")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'true')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property2").isNull()""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property2 == null)]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property3").isEqualTo(false)""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property3 == false)]"""
-		}
-		and:
-		pathAndValues.size() == 3
-		and:
-		pathAndValues.each {
-			it.check()
-		}
+	}'''
+
+	@Unroll
+	def "should generate assertions for null and boolean values"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                            || expectedJsonPath
+			assertThat(json3).field("property1").isEqualTo("true") || '''$[?(@.property1 == 'true')]'''
+			assertThat(json3).field("property2").isNull()          || '''$[?(@.property2 == null)]'''
+			assertThat(json3).field("property3").isEqualTo(false)  || '''$[?(@.property3 == false)]'''
 	}
 
-	def "should generate assertions for simple response body constructed from map with a list"() {
-		given:
-		Map json =  [
-				property1: 'a',
-				property2: [
-						[a: 'sth'],
-						[b: 'sthElse']
-				]
-		]
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property1").isEqualTo("a")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'a')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array("property2").contains("a").isEqualTo("sth")""" &&
-					it.jsonPathBuffer.toString() == """\$.property2[*][?(@.a == 'sth')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array("property2").contains("b").isEqualTo("sthElse")""" &&
-					it.jsonPathBuffer.toString() == """\$.property2[*][?(@.b == 'sthElse')]"""
-		}
-		and:
-		pathAndValues.size() == 3
-		and:
-		pathAndValues.each {
-			it.check()
-		}
-	}
-
-	def "should generate assertions for a response body containing map with integers as keys"() {
-		given:
-		Map json =  [
-				property: [
-						14: 0.0,
-						7 : 0.0
-				]
-		]
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property").field(7).isEqualTo(0.0)""" &&
-					it.jsonPathBuffer.toString() == """\$.property[?(@.7 == 0.0)]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property").field(14).isEqualTo(0.0)""" &&
-					it.jsonPathBuffer.toString() == """\$.property[?(@.14 == 0.0)]"""
-		}
-		and:
-		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
-	}
-
-	def "should generate assertions for array in response body"() {
-		given:
-		String json =  """[
-	{
-		"property1": "a"
-	},
-	{
-		"property2": "b"
-	}]"""
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array().contains("property1").isEqualTo("a")""" &&
-					it.jsonPathBuffer.toString() == """\$[*][?(@.property1 == 'a')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array().contains("property2").isEqualTo("b")""" &&
-					it.jsonPathBuffer.toString() == """\$[*][?(@.property2 == 'b')]"""
-		}
-		and:
-		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
-	}
-
-	def "should generate assertions for array inside response body element"() {
-		given:
-		String json =  """{
-	"property1": [
-	{ "property2": "test1"},
-	{ "property3": "test2"}
+	@Shared Map json4 =  [
+			property1: 'a',
+			property2: [
+					[a: 'sth'],
+					[b: 'sthElse']
+			]
 	]
-}"""
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array("property1").contains("property2").isEqualTo("test1")""" &&
-					it.jsonPathBuffer.toString() == """\$.property1[*][?(@.property2 == 'test1')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array("property1").contains("property3").isEqualTo("test2")""" &&
-					it.jsonPathBuffer.toString() == """\$.property1[*][?(@.property3 == 'test2')]"""
-		}
-		and:
-		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
+
+	@Unroll
+	def "should generate assertions for simple response body constructed from map with a list"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                                     || expectedJsonPath
+			assertThat(toJson(json4)).field("property1").isEqualTo("a")                     || '''$[?(@.property1 == 'a')]'''
+			assertThat(toJson(json4)).array("property2").contains("a").isEqualTo("sth")     || '''$.property2[*][?(@.a == 'sth')]'''
+			assertThat(toJson(json4)).array("property2").contains("b").isEqualTo("sthElse") || '''$.property2[*][?(@.b == 'sthElse')]'''
 	}
 
-	def "should generate assertions for nested objects in response body"() {
-		given:
-		String json =  """{
+	@Shared Map json5 =  [
+			property: [
+					14: 0.0,
+					7 : 0.0
+			]
+	]
+
+	@Unroll
+	def "should generate assertions for a response body containing map with integers as keys"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                          || expectedJsonPath
+			assertThat(toJson(json5)).field("property").field(7).isEqualTo(0.0)  || '''$.property[?(@.7 == 0.0)]'''
+			assertThat(toJson(json5)).field("property").field(14).isEqualTo(0.0) || '''$.property[?(@.14 == 0.0)]'''
+	}
+
+	@Shared String json6 =  '''[
+		{
+			"property1": "a"
+		},
+		{
+			"property2": "b"
+		}]'''
+
+	@Unroll
+	def "should generate assertions for array in response body"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                    || expectedJsonPath
+			assertThat(json6).array().contains("property1").isEqualTo("a") || '''$[*][?(@.property1 == 'a')]'''
+			assertThat(json6).array().contains("property2").isEqualTo("b") || '''$[*][?(@.property2 == 'b')]'''
+	}
+
+	@Shared String json7 =  '''{
+		"property1": [
+		{ "property2": "test1"},
+		{ "property3": "test2"}
+		]
+	}'''
+
+	@Unroll
+	def "should generate assertions for array inside response body element"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                                   || expectedJsonPath
+			assertThat(json7).array("property1").contains("property2").isEqualTo("test1") || '''$.property1[*][?(@.property2 == 'test1')]'''
+			assertThat(json7).array("property1").contains("property3").isEqualTo("test2") || '''$.property1[*][?(@.property3 == 'test2')]'''
+	}
+
+	@Shared String json8 =  """{
 		"property1": "a",
 		"property2": {"property3": "b"}
 	}"""
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property2").field("property3").isEqualTo("b")""" &&
-					it.jsonPathBuffer.toString() == """\$.property2[?(@.property3 == 'b')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property1").isEqualTo("a")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'a')]"""
-		}
-		and:
-		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
+
+	def "should generate assertions for nested objects in response body"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                            || expectedJsonPath
+			assertThat(json8).field("property2").field("property3").isEqualTo("b") || '''$.property2[?(@.property3 == 'b')]'''
+			assertThat(json8).field("property1").isEqualTo("a")                    || '''$[?(@.property1 == 'a')]'''
 	}
 
+	@Shared Map json9 =  [
+			property1: "a",
+			property2: Pattern.compile('[0-9]{3}')
+	]
+
+	@Unroll
 	def "should generate regex assertions for map objects in response body"() {
-		given:
-		Map json =  [
-				property1: "a",
-				property2: Pattern.compile('[0-9]{3}')
-		]
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property2").matches("[0-9]{3}")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property2 =~ /[0-9]{3}/)]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property1").isEqualTo("a")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'a')]"""
-		}
-		and:
-		pathAndValues.size() == 2
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+		where:
+			verifiable                                                      || expectedJsonPath
+			assertThat(toJson(json9)).field("property2").matches("[0-9]{3}") || '''$[?(@.property2 =~ /[0-9]{3}/)]'''
+			assertThat(toJson(json9)).field("property1").isEqualTo("a")      || '''$[?(@.property1 == 'a')]'''
 	}
 
 	def "should generate escaped regex assertions for string objects in response body"() {
@@ -281,82 +190,118 @@ public class JsonPathAssertionSpec extends Specification {
 		Map json =  [
 				property2: Pattern.compile('\\d+')
 		]
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property2").matches("\\d+")""" &&
-					it.jsonPathBuffer.toString() == """\$[?(@.property2 =~ /\\d+/)]"""
-		}
-		and:
-		pathAndValues.size() == 1
+		expect:
+			def verifiable = assertThat(toJson(json)).field("property2").matches("\\d+")
+			verifiable.jsonPath() == '''$[?(@.property2 =~ /\\d+/)]'''
 	}
 
+	@Shared Map json10 =  [
+			errors: [
+					[property: "bank_account_number",
+					 message: "incorrect_format"]
+			]
+	]
 
+	@Unroll
 	def "should work with more complex stuff and jsonpaths"() {
-		given:
-		Map json =  [
-				errors: [
-						[property: "bank_account_number",
-						 message: "incorrect_format"]
-				]
-		]
-		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
-		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array("errors").contains("property").isEqualTo("bank_account_number")""" &&
-					it.jsonPathBuffer.toString() == """\$.errors[*][?(@.property == 'bank_account_number')]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array("errors").contains("message").isEqualTo("incorrect_format")""" &&
-					it.jsonPathBuffer.toString() == """\$.errors[*][?(@.message == 'incorrect_format')]"""
-		}
-		and:
-		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                                                     || expectedJsonPath
+			assertThat(toJson(json10)).array("errors").contains("property").isEqualTo("bank_account_number") || '''$.errors[*][?(@.property == 'bank_account_number')]'''
+			assertThat(toJson(json10)).array("errors").contains("message").isEqualTo("incorrect_format")     || '''$.errors[*][?(@.message == 'incorrect_format')]'''
 	}
 
-	def "should manage to parse a double array"() {
-		given:
-		String json = '''
-						[{
-							"place":
-							{
-								"bounding_box":
+	@Shared String json11 = '''
+							[{
+								"place":
 								{
-									"coordinates":
-										[[
-											[-77.119759,38.995548],
-											[-76.909393,38.791645]
-										]]
+									"bounding_box":
+									{
+										"coordinates":
+											[[
+												[-77.119759,38.995548],
+												[-76.909393,38.791645]
+											]]
+									}
+								}
+							}]
+						'''
+
+	@Unroll
+	def "should manage to parse a double array"() {
+		expect:
+			verifiable.jsonPath() == expectedJsonPath
+			verifiable.check()
+		where:
+			verifiable                                                                                                                           || expectedJsonPath
+			assertThat(json11).array().field("place").field("bounding_box").array("coordinates").array().arrayField().contains(38.995548).value()  || '''$[*].place.bounding_box.coordinates[*][*][?(@ == 38.995548)]'''
+			assertThat(json11).array().field("place").field("bounding_box").array("coordinates").array().arrayField().contains(-77.119759).value() || '''$[*].place.bounding_box.coordinates[*][*][?(@ == -77.119759)]'''
+			assertThat(json11).array().field("place").field("bounding_box").array("coordinates").array().arrayField().contains(-76.909393).value() || '''$[*].place.bounding_box.coordinates[*][*][?(@ == -76.909393)]'''
+			assertThat(json11).array().field("place").field("bounding_box").array("coordinates").array().arrayField().contains(38.791645).value()  || '''$[*].place.bounding_box.coordinates[*][*][?(@ == 38.791645)]'''
+
+	}
+
+	@Unroll
+	def 'should convert a json with list as root to a map of path to value'() {
+		expect:
+			assertThat(json).array().field("some").field("nested").field("json").isEqualTo("with value").jsonPath() == '''$[*].some.nested[?(@.json == 'with value')]'''
+			assertThat(json).array().field("some").field("nested").field("anothervalue").isEqualTo(4).jsonPath() == '''$[*].some.nested[?(@.anothervalue == 4)]'''
+			assertThat(json).array().field("some").field("nested").array("withlist").contains("name").isEqualTo("name1").jsonPath() == '''$[*].some.nested.withlist[*][?(@.name == 'name1')]'''
+			assertThat(json).array().field("some").field("nested").array("withlist").contains("name").isEqualTo("name2").jsonPath() == '''$[*].some.nested.withlist[*][?(@.name == 'name2')]'''
+			assertThat(json).array().field("some").field("nested").array("withlist").field("anothernested").field("name").isEqualTo("name3").jsonPath() == '''$[*].some.nested.withlist[*].anothernested[?(@.name == 'name3')]'''
+		where:
+		json << [
+				'''
+						[ {
+								"some" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}, {"anothernested": { "name": "name3"} }
+										]
+									}
+								}
+							},
+							{
+								"someother" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}
+										]
+									}
 								}
 							}
-						}]
-					'''
-		when:
-		JsonPathVerifiable verifiable = JsonPathAssertion.assertThat(json)
-		then:
-			def foo = verifiable.array().field("place").field("bounding_box").array("coordinates").array().arrayField().contains(38.995548).value()
-			foo.jsonPath() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == 38.995548)]"""
-			foo.check()
-		/*}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(-77.119759).value()""" &&
-					it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == -77.119759)]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(-76.909393).value()""" &&
-					it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == -76.909393)]"""
-		}
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(38.791645).value()""" &&
-					it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == 38.791645)]"""
-		}*/
-
+						]
+	''',
+				'''
+							[{
+								"someother" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											{ "name" :"name1"} , {"name": "name2"}
+										]
+									}
+								}
+							},
+						 {
+								"some" : {
+									"nested" : {
+										"json" : "with value",
+										"anothervalue": 4,
+										"withlist" : [
+											 {"name": "name2"}, {"anothernested": { "name": "name3"} }, { "name" :"name1"}
+										]
+									}
+								}
+							}
+						]''']
 	}
 
 }

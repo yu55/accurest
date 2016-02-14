@@ -1,10 +1,12 @@
 package com.blogspot.toomuchcoding.jsonpathassert;
 
+import java.util.LinkedList;
+
 import com.jayway.jsonpath.DocumentContext;
 
 class ReadyToCheckAsserter extends JsonPathAsserter {
 
-	public ReadyToCheckAsserter(DocumentContext parsedJson, StringBuffer jsonPathBuffer, Object fieldName) {
+	public ReadyToCheckAsserter(DocumentContext parsedJson, LinkedList<String> jsonPathBuffer, Object fieldName) {
 		super(parsedJson, jsonPathBuffer, fieldName);
 	}
 
@@ -12,4 +14,5 @@ class ReadyToCheckAsserter extends JsonPathAsserter {
 	public boolean isReadyToCheck() {
 		return true;
 	}
+
 }

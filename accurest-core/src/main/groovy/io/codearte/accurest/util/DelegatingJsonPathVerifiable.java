@@ -45,20 +45,13 @@ class DelegatingJsonPathVerifiable implements MethodBufferingJsonPathVerifiable 
 
 	@Override
 	public MethodBufferingJsonPathVerifiable field(Object value) {
-		DelegatingJsonPathVerifiable verifiable = new DelegatingJsonPathVerifiable(delegate.field(value), methodsBuffer);
-		verifiable.methodsBuffer.append(".field(").append(wrapValueWithQuotes(value))
-				.append(")");
-		return verifiable;
-	}
-
-	@Override
-	public MethodBufferingJsonPathVerifiable fieldBeforeMatching(Object value) {
-		DelegatingJsonPathVerifiable verifiable = new DelegatingJsonPathVerifiable(delegate.fieldBeforeMatching(value), methodsBuffer);
-		if (delegate.isIteratingOverArray()) {
-			verifiable.methodsBuffer.append(".contains(").append(wrapValueWithQuotes(value))
+		Object valueToPut = value instanceof ShouldTraverse ? ((ShouldTraverse) value).value : value;
+		DelegatingJsonPathVerifiable verifiable = new DelegatingJsonPathVerifiable(delegate.field(valueToPut), methodsBuffer);
+		if (delegate.isIteratingOverArray() && !(value instanceof ShouldTraverse)) {
+			verifiable.methodsBuffer.append(".contains(").append(wrapValueWithQuotes(valueToPut))
 					.append(")");
 		} else {
-			verifiable.methodsBuffer.append(".field(").append(wrapValueWithQuotes(value))
+			verifiable.methodsBuffer.append(".field(").append(wrapValueWithQuotes(valueToPut))
 					.append(")");
 		}
 		return verifiable;

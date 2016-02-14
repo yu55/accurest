@@ -15,4 +15,5 @@ public interface IteratingOverArray {
 	 * True if current element is a particular value on which concrete assertion will take place
 	 */
 	boolean isAssertingAValueInArray();
+
 }

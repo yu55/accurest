@@ -8,7 +8,7 @@ package com.blogspot.toomuchcoding.jsonpathassert;
 public interface JsonPathVerifiable extends ReadyToCheck, IteratingOverArray {
 
 	/**
-	 * Assertion of a field inside an array
+	 * Assertion of a field inside an array. Use it only for assertion and not traversing
 	 */
 	JsonPathVerifiable contains(Object value);
 
@@ -16,13 +16,6 @@ public interface JsonPathVerifiable extends ReadyToCheck, IteratingOverArray {
 	 * Field assertion. Adds a JSON Path entry for the given field.
 	 */
 	JsonPathVerifiable field(Object value);
-
-	/**
-	 * Special case of field - syntactic sugar that doesn't save a jsonpath entry for the given field
-	 *
-	 * TODO: Think of removing this
-	 */
-	JsonPathVerifiable fieldBeforeMatching(Object value);
 
 	/**
 	 * When you want to assert values in a array with a given name

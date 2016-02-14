@@ -1,10 +1,12 @@
 package com.blogspot.toomuchcoding.jsonpathassert;
 
+import java.util.LinkedList;
+
 import com.jayway.jsonpath.DocumentContext;
 
 class NamelessArrayHavingFieldAssertion extends FieldAssertion {
 	protected NamelessArrayHavingFieldAssertion(DocumentContext parsedJson,
-			StringBuffer jsonPathBuffer, Object fieldName) {
+			LinkedList<String> jsonPathBuffer, Object fieldName) {
 		super(parsedJson, jsonPathBuffer, fieldName);
 	}
 

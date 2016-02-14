@@ -13,9 +13,6 @@ public interface MethodBufferingJsonPathVerifiable extends JsonPathVerifiable, M
 	MethodBufferingJsonPathVerifiable field(Object value);
 
 	@Override
-	MethodBufferingJsonPathVerifiable fieldBeforeMatching(Object value);
-
-	@Override
 	MethodBufferingJsonPathVerifiable array(Object value);
 
 	@Override

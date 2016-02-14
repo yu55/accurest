@@ -1,19 +1,16 @@
 package com.blogspot.toomuchcoding.jsonpathassert;
 
+import java.util.LinkedList;
+
 import com.jayway.jsonpath.DocumentContext;
 
 class ArrayAssertion extends JsonPathAsserter {
-	protected ArrayAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer, Object arrayName) {
+	protected ArrayAssertion(DocumentContext parsedJson, LinkedList<String> jsonPathBuffer, Object arrayName) {
 		super(parsedJson, jsonPathBuffer, arrayName);
 	}
 
-	protected ArrayAssertion(DocumentContext parsedJson, StringBuffer jsonPathBuffer) {
+	protected ArrayAssertion(DocumentContext parsedJson, LinkedList<String> jsonPathBuffer) {
 		super(parsedJson, jsonPathBuffer, null);
-	}
-
-	@Override
-	public FieldAssertion fieldBeforeMatching(final Object value) {
-		return new FieldAssertion(parsedJson, jsonPathBuffer, value);
 	}
 
 	@Override

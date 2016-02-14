@@ -1,5 +1,7 @@
 package com.blogspot.toomuchcoding.jsonpathassert;
 
+import java.util.LinkedList;
+
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
@@ -10,7 +12,7 @@ import net.minidev.json.JSONArray;
  */
 public class JsonPathAssertion {
 	private final DocumentContext parsedJson;
-	private final StringBuffer jsonPathBuffer = new StringBuffer();
+	private final LinkedList<String> jsonPathBuffer = new LinkedList<String>();
 
 	private JsonPathAssertion(DocumentContext parsedJson) {
 		this.parsedJson = parsedJson;
@@ -23,7 +25,7 @@ public class JsonPathAssertion {
 
 	private JsonPathVerifiable root() {
 		NamelessArrayHavingFieldAssertion asserter = new NamelessArrayHavingFieldAssertion(parsedJson, jsonPathBuffer, "");
-		asserter.jsonPathBuffer.append("$");
+		asserter.jsonPathBuffer.offer("$");
 		return asserter;
 	}
 

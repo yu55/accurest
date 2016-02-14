@@ -149,8 +149,8 @@ class JsonToJsonPathsConverter {
 							value instanceof List ? listContainsOnlyPrimitives(value) ?
 									parentKey.arrayField(entrykey) :
 									parentKey.array(entrykey) :
-							value instanceof Map ? parentKey.field(entrykey) :
-									valueToAsserter(parentKey.fieldBeforeMatching(entrykey), value)
+							value instanceof Map ? parentKey.field(new ShouldTraverse(entrykey)) :
+									valueToAsserter(parentKey.field(entrykey), value)
 							, value, closureToExecute)]
 		}
 	}

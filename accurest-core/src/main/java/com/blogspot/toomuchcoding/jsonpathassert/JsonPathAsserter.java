@@ -1,5 +1,7 @@
 package com.blogspot.toomuchcoding.jsonpathassert;
 
+import java.util.LinkedList;
+
 import com.jayway.jsonpath.DocumentContext;
 
 import net.minidev.json.JSONArray;
@@ -7,30 +9,28 @@ import net.minidev.json.JSONArray;
 class JsonPathAsserter implements JsonPathVerifiable {
 
 	protected final DocumentContext parsedJson;
-	protected final StringBuffer jsonPathBuffer;
+	protected final LinkedList<String> jsonPathBuffer;
 	protected final Object fieldName;
 
-	protected JsonPathAsserter(DocumentContext parsedJson, StringBuffer jsonPathBuffer, Object fieldName) {
+	protected JsonPathAsserter(DocumentContext parsedJson, LinkedList<String> jsonPathBuffer, Object fieldName) {
 		this.parsedJson = parsedJson;
-		this.jsonPathBuffer = new StringBuffer(jsonPathBuffer.toString());
+		this.jsonPathBuffer = new LinkedList<String>(jsonPathBuffer);
 		this.fieldName = fieldName;
 	}
 
 	@Override
 	public JsonPathVerifiable contains(final Object value) {
-		return new FieldAssertion(parsedJson, jsonPathBuffer, value);
+		FieldAssertion asserter = new FieldAssertion(parsedJson, jsonPathBuffer, value);
+		// this is fake part of jsonpath since in the next section we will remove this entry
+		asserter.jsonPathBuffer.offer("[*]");
+		return asserter;
 	}
 
 	@Override
 	public FieldAssertion field(final Object value) {
 		FieldAssertion asserter = new FieldAssertion(parsedJson, jsonPathBuffer, value);
-		asserter.jsonPathBuffer.append(".").append(String.valueOf(value));
+		asserter.jsonPathBuffer.offer("." + String.valueOf(value));
 		return asserter;
-	}
-
-	@Override
-	public FieldAssertion fieldBeforeMatching(final Object value) {
-		return new FieldAssertion(parsedJson, jsonPathBuffer, value);
 	}
 
 	@Override
@@ -39,14 +39,14 @@ class JsonPathAsserter implements JsonPathVerifiable {
 			return array();
 		}
 		ArrayAssertion asserter = new ArrayAssertion(parsedJson, jsonPathBuffer, value);
-		asserter.jsonPathBuffer.append(".").append(String.valueOf(value)).append("[*]");
+		asserter.jsonPathBuffer.offer("." + String.valueOf(value) + "[*]");
 		return asserter;
 	}
 
 	@Override
 	public ArrayValueAssertion arrayField(final Object value) {
 		ArrayValueAssertion asserter = new ArrayValueAssertion(parsedJson, jsonPathBuffer, value);
-		asserter.jsonPathBuffer.append(".").append(String.valueOf(value));
+		asserter.jsonPathBuffer.offer("." + String.valueOf(value));
 		return asserter;
 	}
 
@@ -58,7 +58,7 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	@Override
 	public ArrayAssertion array() {
 		ArrayAssertion asserter = new ArrayAssertion(parsedJson, jsonPathBuffer);
-		asserter.jsonPathBuffer.append("[*]");
+		asserter.jsonPathBuffer.offer("[*]");
 		return asserter;
 	}
 
@@ -74,8 +74,8 @@ class JsonPathAsserter implements JsonPathVerifiable {
 		}
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
-		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-				.append(" == ").append(wrapValueWithSingleQuotes(value)).append(")]");
+		readyToCheck.jsonPathBuffer.removeLast();
+		readyToCheck.jsonPathBuffer.offer("[?(@." + String.valueOf(fieldName)+ " == " + wrapValueWithSingleQuotes(value) + ")]");
 		return readyToCheck;
 	}
 
@@ -99,8 +99,8 @@ class JsonPathAsserter implements JsonPathVerifiable {
 		}
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
-		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-				.append(" == ").append(value).append(")]");
+		readyToCheck.jsonPathBuffer.removeLast();
+		readyToCheck.jsonPathBuffer.offer("[?(@." + String.valueOf(fieldName)+ " == " + value + ")]");
 		return readyToCheck;
 	}
 
@@ -108,8 +108,8 @@ class JsonPathAsserter implements JsonPathVerifiable {
 	public JsonPathVerifiable isNull() {
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
-		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-				.append(" == null)]");
+		readyToCheck.jsonPathBuffer.removeLast();
+		readyToCheck.jsonPathBuffer.offer("[?(@." + String.valueOf(fieldName) + " == null)]");
 		return readyToCheck;
 	}
 
@@ -120,9 +120,9 @@ class JsonPathAsserter implements JsonPathVerifiable {
 		}
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
-		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-				.append(" =~ /").append(stringWithEscapedSingleQuotes(value))
-				.append("/)]");
+		readyToCheck.jsonPathBuffer.removeLast();
+		readyToCheck.jsonPathBuffer.offer("[?(@." + String.valueOf(fieldName)
+				+ " =~ /" + stringWithEscapedSingleQuotes(value) + "/)]");
 		return readyToCheck;
 	}
 
@@ -133,8 +133,8 @@ class JsonPathAsserter implements JsonPathVerifiable {
 		}
 		ReadyToCheckAsserter readyToCheck = new ReadyToCheckAsserter(parsedJson,
 				jsonPathBuffer, fieldName);
-		readyToCheck.jsonPathBuffer.append("[?(@.").append(String.valueOf(fieldName))
-				.append(" == ").append(String.valueOf(value)).append(")]");
+		readyToCheck.jsonPathBuffer.removeLast();
+		readyToCheck.jsonPathBuffer.offer("[?(@." + String.valueOf(fieldName)+ " == " + String.valueOf(value) + ")]");
 		return readyToCheck;
 	}
 
@@ -146,12 +146,21 @@ class JsonPathAsserter implements JsonPathVerifiable {
 
 	@Override
 	public void check() {
-		assert !parsedJson.read(jsonPathBuffer.toString(), JSONArray.class).isEmpty();
+		assert !parsedJson.read(createJsonPathString(), JSONArray.class).isEmpty();
+	}
+
+	private String createJsonPathString() {
+		LinkedList<String> queue = new LinkedList<String>(jsonPathBuffer);
+		StringBuilder stringBuffer = new StringBuilder();
+		while (!queue.isEmpty()) {
+			stringBuffer.append(queue.remove());
+		}
+		return stringBuffer.toString();
 	}
 
 	@Override
 	public String jsonPath() {
-		return jsonPathBuffer.toString();
+		return createJsonPathString();
 	}
 
 	public boolean equals(Object o) {
@@ -200,20 +209,9 @@ class JsonPathAsserter implements JsonPathVerifiable {
 		return false;
 	}
 
-	static String stringWithEscapedQuotes(Object object) {
-		String stringValue = object.toString();
-		return stringValue.replaceAll("\"", "\\\\\"");
-	}
-
-	static String stringWithEscapedSingleQuotes(Object object) {
+	protected static String stringWithEscapedSingleQuotes(Object object) {
 		String stringValue = object.toString();
 		return stringValue.replaceAll("'", "\\\\'");
-	}
-
-	protected String wrapValueWithQuotes(Object value) {
-		return value instanceof String ?
-				"\"" + stringWithEscapedQuotes(value) + "\"" :
-				value.toString();
 	}
 
 	protected String wrapValueWithSingleQuotes(Object value) {
