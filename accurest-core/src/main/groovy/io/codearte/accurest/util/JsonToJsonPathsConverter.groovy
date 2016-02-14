@@ -1,7 +1,7 @@
 package io.codearte.accurest.util
 
 import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion
-import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion.Asserter
+import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAsserter
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.codearte.accurest.dsl.internal.ExecutionProperty
@@ -31,7 +31,7 @@ class JsonToJsonPathsConverter {
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = MapConverter.getClientOrServerSideValues(json, clientSide)
 		traverseRecursivelyForKey(convertedJson,
-				JsonPathAssertion.root(JsonOutput.toJson(convertedJson))) { Asserter key, Object value ->
+				JsonPathAssertion.root(JsonOutput.toJson(convertedJson))) { JsonPathAsserter key, Object value ->
 			if (value instanceof ExecutionProperty || !key.isReadyToCheck()) {
 				return
 			}
@@ -40,7 +40,7 @@ class JsonToJsonPathsConverter {
 		return pathsAndValues
 	}
 
-	protected static def traverseRecursively(Class parentType, Asserter key, def value, Closure closure) {
+	protected static def traverseRecursively(Class parentType, JsonPathAsserter key, def value, Closure closure) {
 		if (value instanceof String && value) {
 			try {
 				def json = new JsonSlurper().parseText(value)
@@ -57,9 +57,9 @@ class JsonToJsonPathsConverter {
 		} else if (value instanceof Map) {
 			return convertWithKey(Map, key, value as Map, closure)
 		} else if (value instanceof List) {
-			Asserter asserter = createAsserterFromList(key, value)
+			JsonPathAsserter JsonPathAsserter = createAsserterFromList(key, value)
 			value.each { def element ->
-				traverseRecursively(List, createAsserterFromListElement(asserter, element),
+				traverseRecursively(List, createAsserterFromListElement(JsonPathAsserter, element),
 						element, closure)
 			}
 			return value
@@ -73,7 +73,7 @@ class JsonToJsonPathsConverter {
 		}
 	}
 
-	private static Asserter createAsserterFromList(Asserter key, List value) {
+	private static JsonPathAsserter createAsserterFromList(JsonPathAsserter key, List value) {
 		if (key.isIteratingOverNamelessArray()) {
 			return key.namelessArray()
 		} else if (key.isIteratingOverArray() && isAnEntryWithLists(value)) {
@@ -88,14 +88,14 @@ class JsonToJsonPathsConverter {
 		return key
 	}
 
-	private static Asserter createAsserterFromListElement(Asserter asserter, def element) {
-		if (asserter.isAssertingAValueInArray()) {
-			return asserter.contains(element)
+	private static JsonPathAsserter createAsserterFromListElement(JsonPathAsserter JsonPathAsserter, def element) {
+		if (JsonPathAsserter.isAssertingAValueInArray()) {
+			return JsonPathAsserter.contains(element)
 		}
-		return asserter
+		return JsonPathAsserter
 	}
 
-	private static def runClosure(Closure closure, Asserter key, def value) {
+	private static def runClosure(Closure closure, JsonPathAsserter key, def value) {
 		if (key.isAssertingAValueInArray()) {
 			return closure(valueToAsserter(key, value), value)
 		}
@@ -141,7 +141,7 @@ class JsonToJsonPathsConverter {
 		}
 	}
 
-	private static Map convertWithKey(Class parentType, Asserter parentKey, Map map, Closure closureToExecute) {
+	private static Map convertWithKey(Class parentType, JsonPathAsserter parentKey, Map map, Closure closureToExecute) {
 		return map.collectEntries {
 			Object entrykey, value ->
 				[entrykey, traverseRecursively(parentType,
@@ -154,11 +154,11 @@ class JsonToJsonPathsConverter {
 		}
 	}
 
-	private static void traverseRecursivelyForKey(def json, Asserter rootKey, Closure closure) {
+	private static void traverseRecursivelyForKey(def json, JsonPathAsserter rootKey, Closure closure) {
 		traverseRecursively(Map, rootKey, json, closure)
 	}
 
-	protected static JsonPathAssertion.ReadyToCheckAsserter valueToAsserter(Asserter key, Object value) {
+	protected static JsonPathAsserter valueToAsserter(JsonPathAsserter key, Object value) {
 		if (value instanceof Pattern) {
 			return key.matches((value as Pattern).pattern())
 		} else if (value instanceof OptionalProperty) {

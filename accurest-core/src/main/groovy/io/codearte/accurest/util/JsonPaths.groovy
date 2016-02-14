@@ -1,8 +1,8 @@
 package io.codearte.accurest.util
 
-import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion
+import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAsserter
 
-class JsonPaths extends HashSet<JsonPathAssertion.Asserter> {
+class JsonPaths extends HashSet<JsonPathAsserter> {
 
 }
 
