@@ -52,6 +52,8 @@ public class JsonPathAssertionSpec extends Specification {
 				it.jsonPathBuffer.toString() == """\$.some.nested[?(@.json == 'with "val\\'ue')]"""
 			}
 		and:
+			pathAndValues.size() == 4
+		and:
 			pathAndValues.each {
 				it.check()
 			}
@@ -73,6 +75,12 @@ public class JsonPathAssertionSpec extends Specification {
 			pathAndValues.find {
 				it.methodsBuffer.toString() == """.field("property2").isEqualTo("b")""" &&
 				it.jsonPathBuffer.toString() == """\$[?(@.property2 == 'b')]"""
+			}
+		and:
+			pathAndValues.size() == 2
+		and:
+			pathAndValues.each {
+				it.check()
 			}
 	}
 
@@ -97,6 +105,12 @@ public class JsonPathAssertionSpec extends Specification {
 			pathAndValues.find {
 				it.methodsBuffer.toString() == """.field("property3").isEqualTo(false)""" &&
 				it.jsonPathBuffer.toString() == """\$[?(@.property3 == false)]"""
+			}
+		and:
+			pathAndValues.size() == 3
+		and:
+			pathAndValues.each {
+				it.check()
 			}
 	}
 
@@ -124,6 +138,12 @@ public class JsonPathAssertionSpec extends Specification {
 				it.methodsBuffer.toString() == """.array("property2").contains("b").isEqualTo("sthElse")""" &&
 				it.jsonPathBuffer.toString() == """\$.property2[*][?(@.b == 'sthElse')]"""
 			}
+		and:
+			pathAndValues.size() == 3
+		and:
+			pathAndValues.each {
+				it.check()
+			}
 	}
 
 	def "should generate assertions for a response body containing map with integers as keys"() {
@@ -144,6 +164,12 @@ public class JsonPathAssertionSpec extends Specification {
 			pathAndValues.find {
 				it.methodsBuffer.toString() == """.field("property").field(14).isEqualTo(0.0)""" &&
 				it.jsonPathBuffer.toString() == """\$.property[?(@.14 == 0.0)]"""
+			}
+		and:
+			pathAndValues.size() == 2
+		and:
+			pathAndValues.each {
+				it.check()
 			}
 	}
 
@@ -167,6 +193,12 @@ public class JsonPathAssertionSpec extends Specification {
 				it.methodsBuffer.toString() == """.array().contains("property2").isEqualTo("b")""" &&
 				it.jsonPathBuffer.toString() == """\$[*][?(@.property2 == 'b')]"""
 			}
+		and:
+			pathAndValues.size() == 2
+		and:
+			pathAndValues.each {
+				it.check()
+			}
 	}
 
 	def "should generate assertions for array inside response body element"() {
@@ -188,6 +220,12 @@ public class JsonPathAssertionSpec extends Specification {
 				it.methodsBuffer.toString() == """.array("property1").contains("property3").isEqualTo("test2")""" &&
 				it.jsonPathBuffer.toString() == """\$.property1[*][?(@.property3 == 'test2')]"""
 			}
+		and:
+			pathAndValues.size() == 2
+		and:
+			pathAndValues.each {
+				it.check()
+			}
 	}
 
 	def "should generate assertions for nested objects in response body"() {
@@ -206,6 +244,12 @@ public class JsonPathAssertionSpec extends Specification {
 			pathAndValues.find {
 				it.methodsBuffer.toString() == """.field("property1").isEqualTo("a")""" &&
 				it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'a')]"""
+			}
+		and:
+			pathAndValues.size() == 2
+		and:
+			pathAndValues.each {
+				it.check()
 			}
 	}
 
@@ -226,20 +270,24 @@ public class JsonPathAssertionSpec extends Specification {
 				it.methodsBuffer.toString() == """.field("property1").isEqualTo("a")""" &&
 				it.jsonPathBuffer.toString() == """\$[?(@.property1 == 'a')]"""
 			}
+		and:
+			pathAndValues.size() == 2
 	}
 	
 	def "should generate escaped regex assertions for string objects in response body"() {
 		given:
-		Map json =  [
-				property2: Pattern.compile('\\d+')
-		]
+			Map json =  [
+					property2: Pattern.compile('\\d+')
+			]
 		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
-		pathAndValues.find {
-			it.methodsBuffer.toString() == """.field("property2").matches("\\d+")""" &&
-			it.jsonPathBuffer.toString() == """\$[?(@.property2 =~ /\\d+/)]"""
-		}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.field("property2").matches("\\d+")""" &&
+				it.jsonPathBuffer.toString() == """\$[?(@.property2 =~ /\\d+/)]"""
+			}
+		and:
+			pathAndValues.size() == 1
 	}
 	
 	
@@ -262,6 +310,56 @@ public class JsonPathAssertionSpec extends Specification {
 			it.methodsBuffer.toString() == """.array("errors").contains("message").isEqualTo("incorrect_format")""" &&
 			it.jsonPathBuffer.toString() == """\$.errors[*][?(@.message == 'incorrect_format')]"""
 		}
+		and:
+			pathAndValues.size() == 2
+		and:
+			pathAndValues.each {
+				it.check()
+			}
+	}
+
+	def "should manage to parse a double array"() {
+		given:
+			String json = '''
+						[{
+							"place":
+							{
+								"bounding_box":
+								{
+									"coordinates":
+										[[
+											[-77.119759,38.995548],
+											[-76.909393,38.791645]
+										]]
+								}
+							}
+						}]
+					'''
+		when:
+			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(new JsonSlurper().parseText(json))
+		then:
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(38.995548).value()""" &&
+				it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == 38.995548)]"""
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(-77.119759).value()""" &&
+				it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == -77.119759)]"""
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(-76.909393).value()""" &&
+				it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == -76.909393)]"""
+			}
+			pathAndValues.find {
+				it.methodsBuffer.toString() == """.array().field("place").field("bounding_box").array("coordinates").array().contains(38.791645).value()""" &&
+				it.jsonPathBuffer.toString() == """\$[*].place.bounding_box.coordinates[*][*][?(@ == 38.791645)]"""
+			}
+		and:
+			pathAndValues.size() == 4
+		and:
+			pathAndValues.each {
+				it.check()
+			}
 	}
 
 }
