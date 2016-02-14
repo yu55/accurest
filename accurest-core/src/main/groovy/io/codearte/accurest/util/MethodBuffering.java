@@ -6,6 +6,4 @@ package io.codearte.accurest.util;
 public interface MethodBuffering {
 
 	String method();
-
-	String methodWithAppendedCheck();
 }

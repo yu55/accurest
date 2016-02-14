@@ -1,6 +1,6 @@
 package io.codearte.accurest.util
 
-import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion
+import com.blogspot.toomuchcoding.jsonassert.JsonAssertion
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.codearte.accurest.dsl.internal.ExecutionProperty
@@ -29,11 +29,11 @@ class JsonToJsonPathsConverter {
 		}
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = MapConverter.getClientOrServerSideValues(json, clientSide)
-		MethodBufferingJsonPathVerifiable methodBufferingJsonPathVerifiable =
-				new DelegatingJsonPathVerifiable(JsonPathAssertion.assertThat(JsonOutput.toJson(convertedJson)))
+		MethodBufferingJsonVerifiable methodBufferingJsonPathVerifiable =
+				new DelegatingJsonVerifiable(JsonAssertion.assertThat(JsonOutput.toJson(convertedJson)).withoutThrowingException())
 		traverseRecursivelyForKey(convertedJson, methodBufferingJsonPathVerifiable)
-				 { MethodBufferingJsonPathVerifiable key, Object value ->
-			if (value instanceof ExecutionProperty || !key.isReadyToCheck()) {
+				 { MethodBufferingJsonVerifiable key, Object value ->
+			if (value instanceof ExecutionProperty || !(key instanceof FinishedDelegatingJsonVerifiable)) {
 				return
 			}
 			pathsAndValues.add(key)
@@ -41,7 +41,7 @@ class JsonToJsonPathsConverter {
 		return pathsAndValues
 	}
 
-	protected static def traverseRecursively(Class parentType, MethodBufferingJsonPathVerifiable key, def value, Closure closure) {
+	protected static def traverseRecursively(Class parentType, MethodBufferingJsonVerifiable key, def value, Closure closure) {
 		if (value instanceof String && value) {
 			try {
 				def json = new JsonSlurper().parseText(value)
@@ -58,7 +58,7 @@ class JsonToJsonPathsConverter {
 		} else if (value instanceof Map) {
 			return convertWithKey(Map, key, value as Map, closure)
 		} else if (value instanceof List) {
-			MethodBufferingJsonPathVerifiable jsonPathVerifiable = createAsserterFromList(key, value)
+			MethodBufferingJsonVerifiable jsonPathVerifiable = createAsserterFromList(key, value)
 			value.each { def element ->
 				traverseRecursively(List, createAsserterFromListElement(jsonPathVerifiable, element),
 						element, closure)
@@ -74,7 +74,7 @@ class JsonToJsonPathsConverter {
 		}
 	}
 
-	private static MethodBufferingJsonPathVerifiable createAsserterFromList(MethodBufferingJsonPathVerifiable key, List value) {
+	private static MethodBufferingJsonVerifiable createAsserterFromList(MethodBufferingJsonVerifiable key, List value) {
 		if (key.isIteratingOverNamelessArray()) {
 			return key.array()
 		} else if (key.isIteratingOverArray() && isAnEntryWithLists(value)) {
@@ -89,14 +89,14 @@ class JsonToJsonPathsConverter {
 		return key
 	}
 
-	private static MethodBufferingJsonPathVerifiable createAsserterFromListElement(MethodBufferingJsonPathVerifiable jsonPathVerifiable, def element) {
+	private static MethodBufferingJsonVerifiable createAsserterFromListElement(MethodBufferingJsonVerifiable jsonPathVerifiable, def element) {
 		if (jsonPathVerifiable.isAssertingAValueInArray()) {
 			return jsonPathVerifiable.contains(element)
 		}
 		return jsonPathVerifiable
 	}
 
-	private static def runClosure(Closure closure, MethodBufferingJsonPathVerifiable key, def value) {
+	private static def runClosure(Closure closure, MethodBufferingJsonVerifiable key, def value) {
 		if (key.isAssertingAValueInArray()) {
 			return closure(valueToAsserter(key, value), value)
 		}
@@ -142,7 +142,7 @@ class JsonToJsonPathsConverter {
 		}
 	}
 
-	private static Map convertWithKey(Class parentType, MethodBufferingJsonPathVerifiable parentKey, Map map, Closure closureToExecute) {
+	private static Map convertWithKey(Class parentType, MethodBufferingJsonVerifiable parentKey, Map map, Closure closureToExecute) {
 		return map.collectEntries {
 			Object entrykey, value ->
 				[entrykey, traverseRecursively(parentType,
@@ -155,11 +155,11 @@ class JsonToJsonPathsConverter {
 		}
 	}
 
-	private static void traverseRecursivelyForKey(def json, MethodBufferingJsonPathVerifiable rootKey, Closure closure) {
+	private static void traverseRecursivelyForKey(def json, MethodBufferingJsonVerifiable rootKey, Closure closure) {
 		traverseRecursively(Map, rootKey, json, closure)
 	}
 
-	protected static MethodBufferingJsonPathVerifiable valueToAsserter(MethodBufferingJsonPathVerifiable key, Object value) {
+	protected static MethodBufferingJsonVerifiable valueToAsserter(MethodBufferingJsonVerifiable key, Object value) {
 		if (value instanceof Pattern) {
 			return key.matches((value as Pattern).pattern())
 		} else if (value instanceof OptionalProperty) {

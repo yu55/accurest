@@ -90,7 +90,7 @@ abstract class SpockMethodBodyBuilder {
 			appendJsonPath(bb, responseAsString)
 			JsonPaths jsonPaths = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(responseBody)
 			jsonPaths.each {
-					bb.addLine("assertThat(parsedJson)" + it.methodWithAppendedCheck())
+					bb.addLine("assertThat(parsedJson)" + it.method())
 			}
 			processBodyElement(bb, "", responseBody)
 		} else if (contentType == ContentType.XML) {

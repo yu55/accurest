@@ -1,10 +1,11 @@
 package io.codearte.accurest.util
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
+
 import com.jayway.jsonpath.Configuration
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.Option
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import net.minidev.json.JSONArray
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -224,7 +225,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 			assertThatJsonPathsInMapAreValid(json, pathAndValues)
 		}
 
-
 	def 'should convert a map json with a regex pattern'() {
 		given:
 			List json = [
@@ -306,10 +306,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate assertions for null and boolean values"() {
@@ -336,10 +332,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 3
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate assertions for simple response body constructed from map with a list"() {
@@ -368,10 +360,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 3
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate assertions for a response body containing map with integers as keys"() {
@@ -395,10 +383,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate assertions for array in response body"() {
@@ -423,10 +407,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate assertions for array inside response body element"() {
@@ -450,10 +430,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate assertions for nested objects in response body"() {
@@ -475,47 +451,43 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should generate regex assertions for map objects in response body"() {
 		given:
-		Map json =  [
-				property1: "a",
-				property2: Pattern.compile('[0-9]{3}')
-		]
+			Map json =  [
+					property1: "a",
+					property2: Pattern.compile('[0-9]{3}')
+			]
 		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
-		pathAndValues.find {
-			it.method()== """.field("property2").matches("[0-9]{3}")""" &&
-			it.jsonPath() == """\$[?(@.property2 =~ /[0-9]{3}/)]"""
-		}
-		pathAndValues.find {
-			it.method()== """.field("property1").isEqualTo("a")""" &&
-			it.jsonPath() == """\$[?(@.property1 == 'a')]"""
-		}
+			pathAndValues.find {
+				it.method()== """.field("property2").matches("[0-9]{3}")""" &&
+				it.jsonPath() == """\$[?(@.property2 =~ /[0-9]{3}/)]"""
+			}
+			pathAndValues.find {
+				it.method()== """.field("property1").isEqualTo("a")""" &&
+				it.jsonPath() == """\$[?(@.property1 == 'a')]"""
+			}
 		and:
-		pathAndValues.size() == 2
+			pathAndValues.size() == 2
 	}
 
 	def "should generate escaped regex assertions for string objects in response body"() {
 		given:
-		Map json =  [
-				property2: Pattern.compile('\\d+')
-		]
+			Map json =  [
+					property2: Pattern.compile('\\d+')
+			]
 		when:
-		JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
+			JsonPaths pathAndValues = JsonToJsonPathsConverter.transformToJsonPathWithTestsSideValues(json)
 		then:
-		pathAndValues.find {
-			it.method()== """.field("property2").matches("\\d+")""" &&
-			it.jsonPath() == """\$[?(@.property2 =~ /\\d+/)]"""
-		}
+			pathAndValues.find {
+				it.method()== """.field("property2").matches("\\d+")""" &&
+				it.jsonPath() == """\$[?(@.property2 =~ /\\d+/)]"""
+			}
 		and:
-		pathAndValues.size() == 1
+			pathAndValues.size() == 1
 	}
 
 
@@ -540,10 +512,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 2
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	def "should manage to parse a double array"() {
@@ -584,10 +552,6 @@ class JsonToJsonPathsConverterSpec extends Specification {
 		}
 		and:
 		pathAndValues.size() == 4
-		and:
-		pathAndValues.each {
-			it.check()
-		}
 	}
 
 	private void assertThatJsonPathsInMapAreValid(String json, JsonPaths pathAndValues) {
