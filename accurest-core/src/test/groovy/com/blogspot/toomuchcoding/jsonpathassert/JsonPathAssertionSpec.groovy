@@ -1,11 +1,13 @@
-package io.codearte.accurest.util
+package com.blogspot.toomuchcoding.jsonpathassert
 
 import groovy.json.JsonSlurper
+import io.codearte.accurest.util.JsonPaths
+import io.codearte.accurest.util.JsonToJsonPathsConverter
 import spock.lang.Specification
 
 import java.util.regex.Pattern
 
-import static JsonPathAssertion.assertThat
+import static com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion.assertThat
 /**
  * @author Marcin Grzejszczak
  */

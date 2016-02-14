@@ -1,11 +1,11 @@
 package io.codearte.accurest.util
 
-import com.jayway.jsonpath.JsonPath
+import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion
+import com.blogspot.toomuchcoding.jsonpathassert.JsonPathAssertion.Asserter
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import io.codearte.accurest.dsl.internal.ExecutionProperty
 import io.codearte.accurest.dsl.internal.OptionalProperty
-import io.codearte.accurest.util.JsonPathAssertion.Asserter
 
 import java.util.regex.Pattern
 /**
@@ -30,9 +30,9 @@ class JsonToJsonPathsConverter {
 		}
 		JsonPaths pathsAndValues = [] as Set
 		Object convertedJson = MapConverter.getClientOrServerSideValues(json, clientSide)
-		JsonPathAssertion rootEntry = new JsonPathAssertion(JsonPath.parse(JsonOutput.toJson(convertedJson)))
-		traverseRecursivelyForKey(convertedJson, rootEntry.root()) { Asserter key, Object value ->
-			if (value instanceof ExecutionProperty || !(key instanceof JsonPathAssertion.ReadyToCheck)) {
+		traverseRecursivelyForKey(convertedJson,
+				JsonPathAssertion.root(JsonOutput.toJson(convertedJson))) { Asserter key, Object value ->
+			if (value instanceof ExecutionProperty || !key.isReadyToCheck()) {
 				return
 			}
 			pathsAndValues.add(key)
@@ -63,7 +63,7 @@ class JsonToJsonPathsConverter {
 						element, closure)
 			}
 			return value
-		} else if (key instanceof JsonPathAssertion.ArrayAssertion) {
+		} else if (key.isIteratingOverArray()) {
 			traverseRecursively(Object, key.namelessArrayField(value).contains(value), value, closure)
 		}
 		try {
@@ -74,29 +74,29 @@ class JsonToJsonPathsConverter {
 	}
 
 	private static Asserter createAsserterFromList(Asserter key, List value) {
-		if (key instanceof JsonPathAssertion.NamelessArrayHavingFieldAssertion) {
-			return key.namlessArray()
-		} else if (key instanceof JsonPathAssertion.ArrayAssertion && isAnEntryWithLists(value)) {
+		if (key.isIteratingOverNamelessArray()) {
+			return key.namelessArray()
+		} else if (key.isIteratingOverArray() && isAnEntryWithLists(value)) {
 			if (!value.every { listContainsOnlyPrimitives(it as List)} ) {
-				return key.namlessArray()
+				return key.namelessArray()
 			} else {
 				return key.iterationPassingArray()
 			}
-		} else if (key instanceof JsonPathAssertion.ArrayAssertion) {
+		} else if (key.isIteratingOverArray()) {
 			return key.iterationPassingArray()
 		}
 		return key
 	}
 
 	private static Asserter createAsserterFromListElement(Asserter asserter, def element) {
-		if (asserter instanceof JsonPathAssertion.ArrayValueAssertion) {
+		if (asserter.isAssertingAValueInArray()) {
 			return asserter.contains(element)
 		}
 		return asserter
 	}
 
 	private static def runClosure(Closure closure, Asserter key, def value) {
-		if (key instanceof JsonPathAssertion.ArrayValueAssertion) {
+		if (key.isAssertingAValueInArray()) {
 			return closure(valueToAsserter(key, value), value)
 		}
 		return closure(key, value)
@@ -158,7 +158,7 @@ class JsonToJsonPathsConverter {
 		traverseRecursively(Map, rootKey, json, closure)
 	}
 
-	protected static JsonPathAssertion.ReadyToCheck valueToAsserter(Asserter key, Object value) {
+	protected static JsonPathAssertion.ReadyToCheckAsserter valueToAsserter(Asserter key, Object value) {
 		if (value instanceof Pattern) {
 			return key.matches((value as Pattern).pattern())
 		} else if (value instanceof OptionalProperty) {
